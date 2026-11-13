@@ -40,4 +40,9 @@
     <kärna>shouldAutoStartOnPress startar transport vid anslag på väntande startnot; Transport.snapshot döljer waitingNotes vid paus mitt i låt; AudioEngine filtrerar sustain mot aktiva röster och delar röststädning med synthVoice (140 rader); pressNote skickar playingRef.current som isSongMode.</kärna>
     <motivering>Eliminerar UX-fällan vid låtbyte/paus, förhindrar odödliga spök-sustainringar efter 2,85 s nedhållning, uppfyller DEC-002 i låtläge och återställer god marginal under 150-radersgränsen.</motivering>
   </record>
+  <record id="DEC-009" kategori="UI &amp; Input">
+    <beslut>BracketLeft till A#4 (MIDI 70), preventDefault på mappade tangenter, fokus-outline på Keyboard, svensk MIDI-status med Försök igen och SVG-favicon under /KeaVeaw/.</beslut>
+    <kärna>qwertyMap mappar BracketLeft=70 och inputBindings kör e.preventDefault() vid spelbara tangenter (exkl. textfält/modifiers); Keyboard använder focus-visible:outline för att undvika ring-inset-kollision; MidiStatus bär errorKind och midiStatusUi skiljer neutral notis från nekad behörighet med retryMidi; public/favicon.svg länkas via %BASE_URL%favicon.svg.</kärna>
+    <motivering>Åtgärdar Firefox snabbsökning på Quote (B4), lägger till komplett kromatik vid A#4, säkrar WCAG 2.4.7 utan visuell krock, ger svensk MIDI-status med omförsök och eliminerar 404 på favicon.</motivering>
+  </record>
 </ledger>

@@ -97,4 +97,34 @@ describe('MidiManager', () => {
     expect(mgr.getStatus().autoCenterOctave).toBe(true);
     mgr.disconnect();
   });
+
+  it('localizes Firefox add-on / permission errors in Swedish and clears error on retry (#2)', async () => {
+    let shouldFail: Error | null = new Error('WebMIDI requires a site permission add-on to activate');
+    vi.stubGlobal('navigator', {
+      requestMIDIAccess: async () => {
+        if (shouldFail) throw shouldFail;
+        return { inputs: { values: () => [].values() }, onstatechange: null };
+      },
+    });
+    const mgr = new MidiManager();
+    expect(await mgr.connect()).toBe(false);
+    const ff = mgr.getStatus() as { error: string | null; errorKind?: string };
+    expect(ff.error).toBeTruthy();
+    expect(ff.error).not.toMatch(/WebMIDI|requires|permission|add-on/i);
+    expect(ff.errorKind).toBe('notice');
+
+    shouldFail = Object.assign(new Error('Permission to use Web MIDI API was not granted'), { name: 'NotAllowedError' });
+    expect(await mgr.connect()).toBe(false);
+    const denied = mgr.getStatus() as { error: string | null; errorKind?: string };
+    expect(denied.error).toBeTruthy();
+    expect(denied.error).not.toMatch(/Permission|granted/i);
+    expect(denied.errorKind).toBe('error');
+
+    shouldFail = null;
+    expect(await mgr.connect()).toBe(true);
+    const recovered = mgr.getStatus() as { error: string | null; errorKind?: string };
+    expect(recovered.error).toBeNull();
+    expect(recovered.errorKind).toBeUndefined();
+    mgr.disconnect();
+  });
 });

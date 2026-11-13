@@ -50,12 +50,17 @@ export function bindPracticeInputs(d: InputBindingsDeps): () => void {
     }
     const delta = getOctaveDeltaFromCode(e.code);
     if (delta !== 0) {
+      e.preventDefault();
       d.octaveRef.current = applyOctaveShift(d.octaveRef.current, delta, d.heldQwerty, (m) => d.releaseNote(m, 'qwerty'));
       d.setOctaveShift(d.octaveRef.current);
       return;
     }
     const mapped = e.shiftKey ? null : mapCodeToMidi(e.code, d.octaveRef.current);
-    if (mapped !== null) { d.heldQwerty.set(e.code, mapped); d.pressNote(mapped, 'qwerty', 0.8); }
+    if (mapped !== null) {
+      e.preventDefault();
+      d.heldQwerty.set(e.code, mapped);
+      d.pressNote(mapped, 'qwerty', 0.8);
+    }
   };
 
   const onKeyUp = (e: KeyboardEvent) => {

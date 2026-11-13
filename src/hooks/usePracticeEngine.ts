@@ -92,7 +92,7 @@ export function usePracticeEngine() {
   }, [syncVisualNotes]);
 
   const controlDeps = useMemo(() => ({
-    audioRef, transportRef, playingRef, handRef, setSong, setPlaying, setBpm,
+    audioRef, midiRef, transportRef, playingRef, handRef, setSong, setPlaying, setBpm,
     setHandIsolation, setSustainMode, unlockAudio, commitSnapshot, syncVisualNotes,
   }), [unlockAudio, commitSnapshot, syncVisualNotes]);
   const controls = usePracticeControls(controlDeps);

@@ -1,12 +1,14 @@
 import { MutableRefObject, useCallback } from 'react';
 import { SONGS } from '../data/songs';
 import { AudioEngine } from '../engine/AudioEngine';
+import { MidiManager } from '../engine/MidiManager';
 import { Transport } from '../engine/Transport';
 import { HandIsolation, Song, SustainMode, TransportSnapshot } from '../types/midi';
 import { cycleHandIsolation } from './practiceEffects';
 
 export interface PracticeControlDeps {
   audioRef: MutableRefObject<AudioEngine>;
+  midiRef: MutableRefObject<MidiManager>;
   transportRef: MutableRefObject<Transport>;
   playingRef: MutableRefObject<boolean>;
   handRef: MutableRefObject<HandIsolation>;
@@ -71,5 +73,9 @@ export function usePracticeControls(d: PracticeControlDeps) {
     d.syncVisualNotes();
   }, [d]);
 
-  return { togglePlay, resetLoop, cycleHand, selectSong, changeBpm, changeHandIsolation, changeSustainMode };
+  const retryMidi = useCallback(() => {
+    void d.midiRef.current.connect();
+  }, [d]);
+
+  return { togglePlay, resetLoop, cycleHand, selectSong, changeBpm, changeHandIsolation, changeSustainMode, retryMidi };
 }

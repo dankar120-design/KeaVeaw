@@ -52,6 +52,7 @@ export interface MidiStatus {
   connected: boolean;
   deviceName: string | null;
   error: string | null;
+  errorKind?: 'notice' | 'error';
   detectedOctaveOffset: number;
   autoCenterOctave: boolean;
 }

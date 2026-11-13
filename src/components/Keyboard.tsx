@@ -91,7 +91,7 @@ export function Keyboard({
         onPointerCancel={handlePointerRelease}
         onLostPointerCapture={handlePointerRelease}
         style={{ left: `${k.xNorm * 100}%`, width: `${k.wNorm * 100}%` }}
-        className={`absolute top-0 flex flex-col items-center justify-end pb-1.5 transition-colors focus:outline-none ${heightClass} ${baseBg} ${waitBorder} ${sustainRing}`}
+        className={`absolute top-0 flex flex-col items-center justify-end pb-1.5 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-white focus-visible:z-20 ${heightClass} ${baseBg} ${waitBorder} ${sustainRing}`}
       >
         {(interval || finger) && (
           <span className="mb-1 rounded bg-slate-950/85 px-1 py-0.5 text-[10px] font-semibold leading-none text-white">

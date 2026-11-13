@@ -18,6 +18,7 @@ const BASE_CODE_TO_MIDI: Record<string, number> = {
   KeyL: 67, // G4
   KeyP: 68, // G#4
   Semicolon: 69, // A4
+  BracketLeft: 70, // A#4
   Quote: 71, // B4
 };
 

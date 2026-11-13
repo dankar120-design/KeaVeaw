@@ -1,4 +1,5 @@
 import { AudioState, HandIsolation, MidiStatus, Song, SustainMode } from '../types/midi';
+import { getMidiBadgeUi } from '../utils/midiStatusUi';
 
 export interface HudProps {
   songs: Song[];
@@ -16,6 +17,7 @@ export interface HudProps {
   audioState: AudioState;
   onUnlockAudio: () => void;
   midiStatus: MidiStatus;
+  onRetryMidi?: () => void;
   onEnableAutoCenter: () => void;
   onDismissOctaveWarning: () => void;
 }
@@ -36,24 +38,11 @@ export function Hud({
   audioState,
   onUnlockAudio,
   midiStatus,
+  onRetryMidi,
   onEnableAutoCenter,
   onDismissOctaveWarning,
 }: HudProps) {
-  const midiLabel = !midiStatus.supported
-    ? 'MIDI ej stöds (QWERTY/Mus)'
-    : midiStatus.error
-      ? `MIDI-fel: ${midiStatus.error}`
-      : midiStatus.connected
-        ? `MIDI: ${midiStatus.deviceName ?? 'Ansluten'}`
-        : 'MIDI väntar (QWERTY/Mus)';
-
-  const midiBadgeCls = !midiStatus.supported
-    ? 'bg-amber-950/60 text-amber-300 border-amber-700/60'
-    : midiStatus.error
-      ? 'bg-rose-950/70 text-rose-300 border-rose-700/60'
-      : midiStatus.connected
-        ? 'bg-emerald-950/70 text-emerald-300 border-emerald-700/60'
-        : 'bg-gray-800 text-gray-300 border-gray-700';
+  const badgeUi = getMidiBadgeUi(midiStatus);
 
   return (
     <header className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-800 bg-gray-900 px-4 py-2.5 text-xs text-gray-100">
@@ -119,7 +108,17 @@ export function Hud({
           {audioState === 'suspended' ? 'Aktivera Ljud' : 'Ljud Aktivt'}
         </button>
 
-        <span className={`rounded border px-2.5 py-1.5 font-medium ${midiBadgeCls}`}>{midiLabel}</span>
+        <span className={`rounded border px-2.5 py-1.5 font-medium ${badgeUi.className}`}>{badgeUi.label}</span>
+
+        {badgeUi.showRetry && (
+          <button
+            type="button"
+            onClick={onRetryMidi}
+            className="rounded border border-gray-700 bg-gray-800 px-2 py-1.5 text-xs hover:bg-gray-700"
+          >
+            Försök igen
+          </button>
+        )}
 
         {midiStatus.detectedOctaveOffset !== 0 && !midiStatus.autoCenterOctave && (
           <div className="flex items-center gap-1.5 rounded border border-amber-600/70 bg-amber-950/70 px-2.5 py-1 text-amber-200">

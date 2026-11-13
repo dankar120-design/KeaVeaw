@@ -24,6 +24,7 @@ export default function App() {
         audioState={e.audioState}
         onUnlockAudio={e.unlockAudio}
         midiStatus={e.midiStatus}
+        onRetryMidi={e.retryMidi}
         onEnableAutoCenter={e.enableAutoCenter}
         onDismissOctaveWarning={e.dismissOctaveWarning}
       />

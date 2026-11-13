@@ -37,7 +37,8 @@ describe('QWERTY input mapping & KeyZ/KeyX guards (P3-3)', () => {
     expect(mapCodeToMidi('KeyA', 0)).toBe(53); // F3
     expect(mapCodeToMidi('KeyG', 24)).toBe(84); // C6
     expect(mapCodeToMidi('KeyL', 24)).toBeNull(); // G6 (> 84) -> rejected
-    expect(mapCodeToMidi('BracketLeft', 0)).toBeNull();
+    expect(mapCodeToMidi('KeyQ', 0)).toBeNull(); // intentionally unmapped
+    expect(mapCodeToMidi('BracketLeft', 0)).toBe(70); // A#4
 
     expect(getOctaveDeltaFromCode('KeyZ')).toBe(-12);
     expect(getOctaveDeltaFromCode('KeyX')).toBe(12);

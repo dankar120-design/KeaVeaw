@@ -15,6 +15,20 @@ interface SimpleMidiAccess {
   onstatechange: (() => void) | null;
 }
 
+function parseMidiError(err: unknown): { error: string; errorKind: 'notice' | 'error' } {
+  const msg = err && typeof err === 'object'
+    ? `${(err as { name?: string }).name ?? ''} ${(err as { message?: string }).message ?? ''}`
+    : String(err);
+  const text = msg.toLowerCase();
+  if (text.includes('add-on') || text.includes('no devices') || text.includes('not detected')) {
+    return { error: 'MIDI kräver behörighet/tillägg i Firefox (QWERTY/Mus aktiv).', errorKind: 'notice' };
+  }
+  if (text.includes('securityerror') || text.includes('notallowederror') || text.includes('permission') || text.includes('denied')) {
+    return { error: 'MIDI-behörighet nekad (QWERTY/Mus aktiv).', errorKind: 'error' };
+  }
+  return { error: 'Kunde inte ansluta MIDI (QWERTY/Mus aktiv).', errorKind: 'notice' };
+}
+
 export class MidiManager {
   private parser = new MidiFrameParser();
   private midiAccess: SimpleMidiAccess | null = null;
@@ -61,23 +75,29 @@ export class MidiManager {
   // INVARIANT: connectSeq aborts stale async requestMIDIAccess completions if disconnect() ran mid-flight.
   async connect(): Promise<boolean> {
     const seq = ++this.connectSeq;
+    this.cleanMidiAccess();
     const nav = typeof navigator !== 'undefined' ? (navigator as unknown as { requestMIDIAccess?: () => Promise<SimpleMidiAccess> }) : null;
     if (!nav?.requestMIDIAccess) {
       this.status.supported = false;
-      this.status.error = 'Web MIDI stöds inte i denna webbläsare.';
+      this.status.error = 'Web MIDI stöds inte i webbläsaren (QWERTY/Mus aktiv).';
+      this.status.errorKind = 'notice';
       this.notifyStatus();
       return false;
     }
     try {
       const access = await nav.requestMIDIAccess();
       if (seq !== this.connectSeq) return false;
+      this.status.error = null;
+      this.status.errorKind = undefined;
       this.midiAccess = access;
       this.midiAccess.onstatechange = () => this.refreshInputs();
       this.refreshInputs();
       return true;
     } catch (err) {
       if (seq !== this.connectSeq) return false;
-      this.status.error = err instanceof Error ? err.message : 'Kunde inte ansluta MIDI.';
+      const parsed = parseMidiError(err);
+      this.status.error = parsed.error;
+      this.status.errorKind = parsed.errorKind;
       this.notifyStatus();
       return false;
     }
@@ -85,14 +105,18 @@ export class MidiManager {
 
   disconnect(): void {
     this.connectSeq++;
+    this.cleanMidiAccess();
+    this.status.connected = false;
+    this.status.deviceName = null;
+    this.notifyStatus();
+  }
+
+  private cleanMidiAccess(): void {
     if (this.midiAccess) {
       for (const input of this.midiAccess.inputs.values()) input.onmidimessage = null;
       this.midiAccess.onstatechange = null;
       this.midiAccess = null;
     }
-    this.status.connected = false;
-    this.status.deviceName = null;
-    this.notifyStatus();
   }
 
   private refreshInputs(): void {

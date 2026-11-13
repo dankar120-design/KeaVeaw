@@ -24,7 +24,16 @@ export interface InputBindingsDeps {
 }
 
 export function bindPracticeInputs(d: InputBindingsDeps): () => void {
-  const unsubStatus = d.midi.onStatusChange(d.setMidiStatus);
+  const unsubStatus = d.midi.onStatusChange((s) => {
+    d.setMidiStatus(s);
+    if (!s.connected) {
+      const released = d.holds.releaseSource('midi');
+      if (released.length > 0) {
+        for (const m of released) d.audio.noteOff(m);
+        d.syncVisualNotes();
+      }
+    }
+  });
   const unsubEvent = d.midi.onEvent((ev) => {
     if (ev.type === 'noteOn') d.pressNote(ev.midi, 'midi', ev.velocity);
     else if (ev.type === 'noteOff') d.releaseNote(ev.midi, 'midi');

@@ -33,7 +33,7 @@ export const cinematicPulse: Song = {
         { beat: 0, symbol: 'Dm', rootMidi: 62 },
         { beat: 4, symbol: 'Bb', rootMidi: 58 },
         { beat: 8, symbol: 'F', rootMidi: 53 },
-        { beat: 12, symbol: 'C', rootMidi: 55 },
+        { beat: 12, symbol: 'C', rootMidi: 60 },
       ],
     },
     {
@@ -45,7 +45,7 @@ export const cinematicPulse: Song = {
         { beat: 16, symbol: 'Dm', rootMidi: 62 },
         { beat: 20, symbol: 'Bb', rootMidi: 58 },
         { beat: 24, symbol: 'F', rootMidi: 53 },
-        { beat: 28, symbol: 'C', rootMidi: 55 },
+        { beat: 28, symbol: 'C', rootMidi: 60 },
       ],
     },
   ],

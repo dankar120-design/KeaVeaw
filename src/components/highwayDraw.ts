@@ -7,6 +7,7 @@ export interface HighwayPlaybackState {
   loopEnd: number;
   speedMultiplier: number;
   isFrozen: boolean;
+  playing?: boolean;
   activeChord: ChordMarker | null;
 }
 
@@ -121,25 +122,24 @@ export function drawHighwayFrame(ctx: CanvasRenderingContext2D, w: number, h: nu
   drawGrid(ctx, w, h, state.beat, timeSignature, beatToY);
   drawNotes(ctx, w, params, beatToY);
 
-  ctx.strokeStyle = state.isFrozen ? '#F59E0B' : '#38BDF8';
+  const showWaiting = state.playing !== false && state.isFrozen;
+  const isPausedMid = state.playing === false && (state.isFrozen || state.speedMultiplier < 0.99);
+  const statusTag = showWaiting ? 'VÄNTAR' : isPausedMid ? 'PAUSAD' : state.speedMultiplier < 0.99 ? `${Math.round(state.speedMultiplier * 100)}%` : null;
+
+  ctx.strokeStyle = showWaiting ? '#F59E0B' : '#38BDF8';
   ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.moveTo(0, hitY);
   ctx.lineTo(w, hitY);
   ctx.stroke();
 
-  if (state.activeChord || state.isFrozen || state.speedMultiplier < 0.99) {
-    const label = [
-      state.activeChord?.symbol,
-      state.isFrozen ? 'VÄNTAR' : state.speedMultiplier < 0.99 ? `${Math.round(state.speedMultiplier * 100)}%` : null,
-    ]
-      .filter(Boolean)
-      .join(' · ');
+  if (state.activeChord || statusTag) {
+    const label = [state.activeChord?.symbol, statusTag].filter(Boolean).join(' · ');
     ctx.font = '600 13px system-ui, sans-serif';
     const textW = ctx.measureText(label).width;
-    ctx.fillStyle = state.isFrozen ? 'rgba(245, 158, 11, 0.22)' : 'rgba(15, 23, 42, 0.82)';
+    ctx.fillStyle = showWaiting ? 'rgba(245, 158, 11, 0.22)' : 'rgba(15, 23, 42, 0.82)';
     drawRoundedPill(ctx, w - textW - 32, 12, textW + 20, 28, 6);
-    ctx.fillStyle = state.isFrozen ? '#FDE68A' : '#E2E8F0';
+    ctx.fillStyle = showWaiting ? '#FDE68A' : '#E2E8F0';
     ctx.fillText(label, w - textW - 22, 30);
   }
 }

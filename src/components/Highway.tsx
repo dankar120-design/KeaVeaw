@@ -71,7 +71,7 @@ export function Highway({
   }, [playing, drawOnce, drawRef]);
 
   return (
-    <div ref={containerRef} className="relative min-h-[260px] w-full flex-1 overflow-hidden bg-[#0B0F19]">
+    <div ref={containerRef} className="relative min-h-[120px] w-full flex-1 overflow-hidden bg-[#0B0F19]">
       <canvas ref={canvasRef} className="block h-full w-full" />
     </div>
   );

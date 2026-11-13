@@ -3,9 +3,10 @@ import { SONGS } from '../data/songs';
 import { AudioEngine } from '../engine/AudioEngine';
 import { MidiManager } from '../engine/MidiManager';
 import { Transport } from '../engine/Transport';
-import { AudioState, HandIsolation, MidiStatus, Song, SustainMode, TransportSnapshot } from '../types/midi';
+import { HandIsolation, MidiStatus, Song, SustainMode, TransportSnapshot } from '../types/midi';
 import { HighwayPlaybackState } from '../components/highwayDraw';
 import { bindPracticeInputs } from './inputBindings';
+import { useAudioStatus } from './useAudioStatus';
 import { usePracticeControls } from './usePracticeControls';
 import {
   applyTransportEffects,
@@ -28,7 +29,7 @@ export function usePracticeEngine() {
   const [bpm, setBpm] = useState(SONGS[0].bpm);
   const [handIsolation, setHandIsolation] = useState<HandIsolation>('BOTH');
   const [sustainMode, setSustainMode] = useState<SustainMode>('AUTO_ROOT');
-  const [audioState, setAudioState] = useState<AudioState>('suspended');
+  const { audioState, audioPrompt, unlockAudio, notifyMidiBlocked } = useAudioStatus(audioRef);
   const [midiStatus, setMidiStatus] = useState<MidiStatus>(() => midiRef.current.getStatus());
   const [octaveShift, setOctaveShift] = useState(0);
   const [activeNotes, setActiveNotes] = useState<Set<number>>(() => new Set());
@@ -70,12 +71,9 @@ export function usePracticeEngine() {
     drawRef.current?.();
   }, [syncVisualNotes]);
 
-  const unlockAudio = useCallback(() => {
-    if (audioRef.current.getState() !== 'running') void audioRef.current.resume().then(setAudioState);
-  }, []);
-
   const pressNote = useCallback((midi: number, src: InputSource, velocity = 0.8) => {
-    if (src !== 'midi') unlockAudio();
+    if (src === 'midi') notifyMidiBlocked(src);
+    else unlockAudio();
     if (shouldAutoStartOnPress(snapshotRef.current, playingRef.current, midi)) {
       playingRef.current = true;
       setPlaying(true);
@@ -84,7 +82,7 @@ export function usePracticeEngine() {
     transportRef.current.registerNoteOn(midi);
     if (holdsRef.current.press(midi, src)) audioRef.current.noteOn(midi, velocity, playingRef.current);
     syncVisualNotes();
-  }, [unlockAudio, commitSnapshot, syncVisualNotes]);
+  }, [unlockAudio, notifyMidiBlocked, commitSnapshot, syncVisualNotes]);
 
   const releaseNote = useCallback((midi: number, src: InputSource) => {
     if (holdsRef.current.release(midi, src)) audioRef.current.noteOff(midi);
@@ -114,7 +112,6 @@ export function usePracticeEngine() {
 
   useEffect(() => {
     const audio = audioRef.current;
-    setAudioState(audio.getState());
     audio.setOnVoiceChange(syncVisualNotes);
     const unbind = bindPracticeInputs({
       midi: midiRef.current, audio, transport: transportRef.current,
@@ -130,11 +127,12 @@ export function usePracticeEngine() {
 
   const getPlaybackState = useCallback((): HighwayPlaybackState => ({
     beat: snapshotRef.current.beat, loopStart: snapshotRef.current.loopStart, loopEnd: snapshotRef.current.loopEnd,
-    speedMultiplier: snapshotRef.current.speedMultiplier, isFrozen: snapshotRef.current.isFrozen, activeChord: snapshotRef.current.activeChord,
+    speedMultiplier: snapshotRef.current.speedMultiplier, isFrozen: snapshotRef.current.isFrozen,
+    playing: snapshotRef.current.playing, activeChord: snapshotRef.current.activeChord,
   }), []);
 
   return {
-    songs: SONGS, song, playing, bpm, handIsolation, sustainMode, audioState, midiStatus, octaveShift,
+    songs: SONGS, song, playing, bpm, handIsolation, sustainMode, audioState, audioPrompt, midiStatus, octaveShift,
     activeNotes, sustainedNotes, waitingNotes: uiSnap.waitingNotes, activeChord: uiSnap.activeChord,
     drawRef, getPlaybackState, ...controls, unlockAudio,
     pressPointer: (m: number) => pressNote(m, 'pointer', 0.85),

@@ -41,13 +41,22 @@ export function computeOctaveOffset(rawMidi: number): number {
   return 0;
 }
 
-export function chordPitchClasses(symbol: string): Set<number> {
+function parseChordParts(symbol: string): { rootPc: number; suffix: string } | null {
   const match = /^([A-G][#b]?)(.*)$/.exec(symbol.trim());
-  if (!match) return new Set();
+  if (!match) return null;
   const rootPc = PC_MAP[match[1]];
-  if (rootPc === undefined) return new Set();
-  const intervals = CHORD_INTERVALS[match[2]] ?? CHORD_INTERVALS[''];
-  return new Set(intervals.map((iv) => (rootPc + iv) % 12));
+  return rootPc === undefined ? null : { rootPc, suffix: match[2] };
+}
+
+export function chordRootPitchClass(symbol: string): number | null {
+  return parseChordParts(symbol)?.rootPc ?? null;
+}
+
+export function chordPitchClasses(symbol: string): Set<number> {
+  const parsed = parseChordParts(symbol);
+  if (!parsed) return new Set();
+  const intervals = CHORD_INTERVALS[parsed.suffix] ?? CHORD_INTERVALS[''];
+  return new Set(intervals.map((iv) => (parsed.rootPc + iv) % 12));
 }
 
 export function intervalLabel(midi: number, rootMidi: number): string {

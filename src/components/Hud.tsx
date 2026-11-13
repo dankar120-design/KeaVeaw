@@ -15,6 +15,7 @@ export interface HudProps {
   sustainMode: SustainMode;
   onChangeSustainMode: (mode: SustainMode) => void;
   audioState: AudioState;
+  audioPrompt?: boolean;
   onUnlockAudio: () => void;
   midiStatus: MidiStatus;
   onRetryMidi?: () => void;
@@ -36,6 +37,7 @@ export function Hud({
   sustainMode,
   onChangeSustainMode,
   audioState,
+  audioPrompt = false,
   onUnlockAudio,
   midiStatus,
   onRetryMidi,
@@ -45,13 +47,13 @@ export function Hud({
   const badgeUi = getMidiBadgeUi(midiStatus);
 
   return (
-    <header className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-800 bg-gray-900 px-4 py-2.5 text-xs text-gray-100">
-      <div className="flex flex-wrap items-center gap-2">
+    <header className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-gray-800 bg-gray-900 px-4 py-2.5 text-xs text-gray-100">
+      <div className="flex max-w-full flex-wrap items-center gap-2">
         <select
           aria-label="Välj låt"
           value={selectedSongId}
           onChange={(e) => onSelectSong(e.target.value)}
-          className="rounded border border-gray-700 bg-gray-800 px-2.5 py-1.5 font-medium text-gray-100"
+          className="max-w-full min-w-0 rounded border border-gray-700 bg-gray-800 px-2.5 py-1.5 font-medium text-gray-100"
         >
           {songs.map((s) => (
             <option key={s.id} value={s.id}>{s.title}</option>
@@ -103,10 +105,20 @@ export function Hud({
         <button
           type="button"
           onClick={onUnlockAudio}
-          className={`rounded px-3 py-1.5 font-semibold ${audioState === 'suspended' ? 'animate-pulse bg-amber-400 text-slate-950' : 'border border-emerald-700/60 bg-emerald-950/60 text-emerald-300'}`}
+          className={`rounded px-3 py-1.5 font-semibold ${
+            audioState === 'suspended'
+              ? `animate-pulse bg-amber-400 text-slate-950 ${audioPrompt ? 'ring-2 ring-amber-200 ring-offset-2 ring-offset-gray-900 shadow-lg shadow-amber-500/40' : ''}`
+              : 'border border-emerald-700/60 bg-emerald-950/60 text-emerald-300'
+          }`}
         >
           {audioState === 'suspended' ? 'Aktivera Ljud' : 'Ljud Aktivt'}
         </button>
+
+        {audioState === 'suspended' && audioPrompt && (
+          <span role="status" className="max-w-full rounded border border-amber-500/70 bg-amber-950/80 px-2 py-1 text-amber-200">
+            Klicka Aktivera Ljud för att höra MIDI
+          </span>
+        )}
 
         <span className={`rounded border px-2.5 py-1.5 font-medium ${badgeUi.className}`}>{badgeUi.label}</span>
 

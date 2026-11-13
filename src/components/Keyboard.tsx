@@ -108,7 +108,7 @@ export function Keyboard({
   const blacks = KEY_LAYOUTS.filter((k) => k.isBlack);
 
   return (
-    <div className="relative h-44 w-full shrink-0 select-none overflow-hidden bg-slate-950 touch-none">
+    <div className="relative h-[clamp(112px,24dvh,176px)] w-full shrink-0 select-none overflow-hidden bg-slate-950 touch-none">
       {whites.map(renderKey)}
       {blacks.map(renderKey)}
     </div>

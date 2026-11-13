@@ -27,6 +27,29 @@ export class MidiFrameParser {
   getDetectedOffset(): number { return this.detectedOffset; }
   clearDetectedOffset(): void { this.detectedOffset = 0; }
 
+  flush(): ParsedMidiEvent[] {
+    const evs: ParsedMidiEvent[] = [];
+    this.flushActiveNotes(evs);
+    this.resetControllers(evs);
+    return evs;
+  }
+
+  private flushActiveNotes(evs: ParsedMidiEvent[]): void {
+    for (const [rawMidi, midi] of this.activeNoteMap) evs.push({ type: 'noteOff', midi, rawMidi });
+    this.activeNoteMap.clear();
+  }
+
+  private resetControllers(evs: ParsedMidiEvent[]): void {
+    if (this.lastSustainState) {
+      this.lastSustainState = false;
+      evs.push({ type: 'sustain', down: false });
+    }
+    this.pitchArmed = true;
+    this.modArmed = true;
+    this.lastPitchTime = 0;
+    this.lastModTime = 0;
+  }
+
   // INVARIANT: Pitch Bend Schmitt hysteresis (>2000 engage, <500 rearm) prevents pitch-ramp false double-clicks.
   parse(data: Uint8Array, timeMs?: number): ParsedMidiEvent[] {
     if (data.length < 2) return [];
@@ -69,6 +92,13 @@ export class MidiFrameParser {
         } else if (val <= 64) {
           this.modArmed = true;
         }
+      } else if (cc === 123) {
+        this.flushActiveNotes(evs);
+      } else if (cc === 120) {
+        this.flushActiveNotes(evs);
+        this.resetControllers(evs);
+      } else if (cc === 121) {
+        this.resetControllers(evs);
       }
     } else if (status === 0xe0 && data.length > 2) {
       const delta = Math.abs(((data[2] << 7) | data[1]) - 8192);

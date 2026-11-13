@@ -5,6 +5,7 @@ import { parseMidiError } from '../utils/midiStatusUi';
 interface SimpleMidiMessageEvent { data: Uint8Array; }
 interface SimpleMidiInput {
   name?: string | null;
+  state?: 'connected' | 'disconnected' | string;
   onmidimessage: ((msg: SimpleMidiMessageEvent) => void) | null;
 }
 interface SimpleMidiAccess {
@@ -15,6 +16,7 @@ interface SimpleMidiAccess {
 export class MidiManager {
   private parser = new MidiFrameParser();
   private midiAccess: SimpleMidiAccess | null = null;
+  private activeInputs = new Set<SimpleMidiInput>();
   private listeners = new Set<(e: ParsedMidiEvent) => void>();
   private statusListeners = new Set<(s: MidiStatus) => void>();
   private connectSeq = 0;
@@ -88,7 +90,9 @@ export class MidiManager {
 
   disconnect(): void {
     this.connectSeq++;
+    this.activeInputs.clear();
     this.cleanMidiAccess();
+    this.emitEvents(this.parser.flush());
     this.status.connected = false;
     this.status.deviceName = null;
     this.notifyStatus();
@@ -102,25 +106,31 @@ export class MidiManager {
     }
   }
 
+  private emitEvents(evs: ParsedMidiEvent[]): void {
+    for (const ev of evs) {
+      for (const listener of this.listeners) listener(ev);
+    }
+  }
+
   private refreshInputs(): void {
     if (!this.midiAccess) return;
     let name: string | null = null;
-    let hasInput = false;
+    const nextInputs = new Set<SimpleMidiInput>();
     for (const input of this.midiAccess.inputs.values()) {
-      hasInput = true;
+      if (input.state === 'disconnected') { input.onmidimessage = null; continue; }
+      nextInputs.add(input);
       name = input.name ?? 'USB MIDI Device';
       input.onmidimessage = (msg: SimpleMidiMessageEvent) => {
         if (!msg.data) return;
-        for (const ev of this.parser.parse(msg.data)) {
-          for (const listener of this.listeners) listener(ev);
-        }
+        this.emitEvents(this.parser.parse(msg.data));
         if (this.status.detectedOctaveOffset !== this.parser.getDetectedOffset()) this.notifyStatus();
       };
     }
-    if (hasInput) {
-      this.status.error = null;
-      this.status.errorKind = undefined;
-    }
+    const lostPort = Array.from(this.activeInputs).some((prev) => !nextInputs.has(prev));
+    this.activeInputs = nextInputs;
+    if (lostPort || (this.status.connected && nextInputs.size === 0)) this.emitEvents(this.parser.flush());
+    const hasInput = nextInputs.size > 0;
+    if (hasInput) { this.status.error = null; this.status.errorKind = undefined; }
     this.status.connected = hasInput;
     this.status.deviceName = name;
     this.notifyStatus();

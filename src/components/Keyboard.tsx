@@ -75,6 +75,7 @@ export function Keyboard({
           : 'bg-slate-100 text-slate-800';
 
     const sustainRing = isSustained && !isActive ? 'ring-2 ring-inset ring-emerald-400/80' : '';
+    const focusClass = k.isBlack ? 'focus-visible:outline-cyan-300' : 'focus-visible:outline-slate-950';
     const heightClass = k.isBlack ? 'z-10 h-[62%] rounded-b-md border shadow-md' : 'z-0 h-full rounded-b border border-slate-400';
 
     const interval = waiting && activeChord ? intervalLabel(k.midi, activeChord.rootMidi) : '';
@@ -91,7 +92,7 @@ export function Keyboard({
         onPointerCancel={handlePointerRelease}
         onLostPointerCapture={handlePointerRelease}
         style={{ left: `${k.xNorm * 100}%`, width: `${k.wNorm * 100}%` }}
-        className={`absolute top-0 flex flex-col items-center justify-end pb-1.5 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-white focus-visible:z-20 ${heightClass} ${baseBg} ${waitBorder} ${sustainRing}`}
+        className={`absolute top-0 flex flex-col items-center justify-end pb-1.5 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 ${focusClass} ${heightClass} ${baseBg} ${waitBorder} ${sustainRing}`}
       >
         {(interval || finger) && (
           <span className="mb-1 rounded bg-slate-950/85 px-1 py-0.5 text-[10px] font-semibold leading-none text-white">

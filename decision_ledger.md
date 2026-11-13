@@ -45,4 +45,9 @@
     <kärna>qwertyMap mappar BracketLeft=70 och inputBindings kör e.preventDefault() vid spelbara tangenter (exkl. textfält/modifiers); Keyboard använder focus-visible:outline för att undvika ring-inset-kollision; MidiStatus bär errorKind och midiStatusUi skiljer neutral notis från nekad behörighet med retryMidi; public/favicon.svg länkas via %BASE_URL%favicon.svg.</kärna>
     <motivering>Åtgärdar Firefox snabbsökning på Quote (B4), lägger till komplett kromatik vid A#4, säkrar WCAG 2.4.7 utan visuell krock, ger svensk MIDI-status med omförsök och eliminerar 404 på favicon.</motivering>
   </record>
+  <record id="DEC-010" kategori="Audit-härdning (UI, Input &amp; MIDI)">
+    <beslut>Kontrastanpassad key-outline utan z-20-läckage, repeat-säkrad preventDefault, header-scoped Space-blur och utbruten MIDI-felparsning med hot-plug-rensning.</beslut>
+    <kärna>Keyboard separerar focusClass (slate-950 vit / cyan-300 svart) utan focus-visible:z-20; qwertyMap exporterar isPlayableTargetEvent och inputBindings blockerar Firefox Quick Find även på keydown-repeat samt blurrar enbart header-knappar vid Space; parseMidiError exporteras i midiStatusUi och MidiManager.refreshInputs nollställer error/errorKind när hasInput är true.</kärna>
+    <motivering>Eliminerar osynlig vit-på-vit fokusram (E4) och z-index-kollision mot svarta tangenter, hindrar nedhållen Quote-tangent från att utlösa snabbsökning utan omtriggning, bevarar tangentbordsfokus på pianotangenter och garanterar ren MIDI-status och god marginal under 150-radersregeln.</motivering>
+  </record>
 </ledger>

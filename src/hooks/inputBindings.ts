@@ -2,7 +2,7 @@ import { AudioEngine } from '../engine/AudioEngine';
 import { MidiManager } from '../engine/MidiManager';
 import { Transport } from '../engine/Transport';
 import { MidiStatus, TransportSnapshot } from '../types/midi';
-import { applyOctaveShift, getOctaveDeltaFromCode, isPlayableKeyEvent, mapCodeToMidi } from '../utils/qwertyMap';
+import { applyOctaveShift, getOctaveDeltaFromCode, isPlayableKeyEvent, isPlayableTargetEvent, mapCodeToMidi } from '../utils/qwertyMap';
 import { InputSource, MultiSourceHoldTracker } from './practiceEffects';
 
 export interface InputBindingsDeps {
@@ -36,30 +36,40 @@ export function bindPracticeInputs(d: InputBindingsDeps): () => void {
 
   // INVARIANT: Capture Space on keydown/keyup so focused HUD buttons never double-trigger on Space release.
   const onKeyDown = (e: KeyboardEvent) => {
-    if (!isPlayableKeyEvent(e)) return;
+    if (!isPlayableTargetEvent(e)) return;
     if (e.code === 'Space') {
       e.preventDefault(); e.stopPropagation();
-      if (document.activeElement instanceof HTMLButtonElement) document.activeElement.blur();
-      d.togglePlay();
+      if (!e.repeat) {
+        if (document.activeElement instanceof HTMLButtonElement && document.activeElement.closest('header')) {
+          document.activeElement.blur();
+        }
+        d.togglePlay();
+      }
       return;
     }
     if (e.shiftKey && (e.code === 'ArrowLeft' || e.code === 'ArrowRight')) {
       e.preventDefault();
-      d.commitSnapshot(d.transport.shiftLoop(e.code === 'ArrowLeft' ? -4 : 4), false);
+      if (!e.repeat) {
+        d.commitSnapshot(d.transport.shiftLoop(e.code === 'ArrowLeft' ? -4 : 4), false);
+      }
       return;
     }
     const delta = getOctaveDeltaFromCode(e.code);
     if (delta !== 0) {
       e.preventDefault();
-      d.octaveRef.current = applyOctaveShift(d.octaveRef.current, delta, d.heldQwerty, (m) => d.releaseNote(m, 'qwerty'));
-      d.setOctaveShift(d.octaveRef.current);
+      if (!e.repeat) {
+        d.octaveRef.current = applyOctaveShift(d.octaveRef.current, delta, d.heldQwerty, (m) => d.releaseNote(m, 'qwerty'));
+        d.setOctaveShift(d.octaveRef.current);
+      }
       return;
     }
     const mapped = e.shiftKey ? null : mapCodeToMidi(e.code, d.octaveRef.current);
     if (mapped !== null) {
       e.preventDefault();
-      d.heldQwerty.set(e.code, mapped);
-      d.pressNote(mapped, 'qwerty', 0.8);
+      if (!e.repeat) {
+        d.heldQwerty.set(e.code, mapped);
+        d.pressNote(mapped, 'qwerty', 0.8);
+      }
     }
   };
 

@@ -100,10 +100,12 @@ describe('MidiManager', () => {
 
   it('localizes Firefox add-on / permission errors in Swedish and clears error on retry (#2)', async () => {
     let shouldFail: Error | null = new Error('WebMIDI requires a site permission add-on to activate');
+    const inputs: Array<{ name: string; onmidimessage: ((msg: { data: Uint8Array }) => void) | null }> = [];
+    const access = { inputs: { values: () => inputs.values() }, onstatechange: null as (() => void) | null };
     vi.stubGlobal('navigator', {
       requestMIDIAccess: async () => {
         if (shouldFail) throw shouldFail;
-        return { inputs: { values: () => [].values() }, onstatechange: null };
+        return access;
       },
     });
     const mgr = new MidiManager();
@@ -122,9 +124,18 @@ describe('MidiManager', () => {
 
     shouldFail = null;
     expect(await mgr.connect()).toBe(true);
-    const recovered = mgr.getStatus() as { error: string | null; errorKind?: string };
-    expect(recovered.error).toBeNull();
-    expect(recovered.errorKind).toBeUndefined();
+    expect(mgr.getStatus().connected).toBe(false);
+    expect(mgr.getStatus().error).toBeNull();
+    expect(mgr.getStatus().errorKind).toBeUndefined();
+
+    // Hot-plug via onstatechange updates connected, deviceName & clears error state
+    (mgr as unknown as { status: { error: string | null; errorKind?: 'notice' | 'error' } }).status.error = 'stale';
+    inputs.push({ name: 'Keystation 32', onmidimessage: null });
+    access.onstatechange?.();
+    expect(mgr.getStatus().connected).toBe(true);
+    expect(mgr.getStatus().deviceName).toBe('Keystation 32');
+    expect(mgr.getStatus().error).toBeNull();
+    expect(mgr.getStatus().errorKind).toBeUndefined();
     mgr.disconnect();
   });
 });

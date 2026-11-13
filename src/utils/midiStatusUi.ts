@@ -6,6 +6,20 @@ export interface MidiBadgeUi {
   showRetry: boolean;
 }
 
+export function parseMidiError(err: unknown): { error: string; errorKind: 'notice' | 'error' } {
+  const msg = err && typeof err === 'object'
+    ? `${(err as { name?: string }).name ?? ''} ${(err as { message?: string }).message ?? ''}`
+    : String(err);
+  const text = msg.toLowerCase();
+  if (text.includes('add-on') || text.includes('no devices') || text.includes('not detected')) {
+    return { error: 'MIDI kräver behörighet/tillägg i Firefox (QWERTY/Mus aktiv).', errorKind: 'notice' };
+  }
+  if (text.includes('securityerror') || text.includes('notallowederror') || text.includes('permission') || text.includes('denied')) {
+    return { error: 'MIDI-behörighet nekad (QWERTY/Mus aktiv).', errorKind: 'error' };
+  }
+  return { error: 'Kunde inte ansluta MIDI (QWERTY/Mus aktiv).', errorKind: 'notice' };
+}
+
 export function getMidiBadgeUi(s: MidiStatus): MidiBadgeUi {
   if (!s.supported) {
     return {

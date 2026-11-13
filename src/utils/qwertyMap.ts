@@ -32,12 +32,16 @@ export interface PlayableKeyEventLike {
   target: EventTarget | null;
 }
 
-export function isPlayableKeyEvent(e: PlayableKeyEventLike): boolean {
-  if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return false;
+export function isPlayableTargetEvent(e: Omit<PlayableKeyEventLike, 'repeat'> | PlayableKeyEventLike): boolean {
+  if (e.ctrlKey || e.metaKey || e.altKey) return false;
   const el = e.target as { tagName?: string; isContentEditable?: boolean } | null;
   if (!el) return true;
   if (el.isContentEditable) return false;
   return !el.tagName || !BLOCKED_TAGS.has(el.tagName.toUpperCase());
+}
+
+export function isPlayableKeyEvent(e: PlayableKeyEventLike): boolean {
+  return !e.repeat && isPlayableTargetEvent(e);
 }
 
 export function mapCodeToMidi(code: string, octaveShift = 0): number | null {

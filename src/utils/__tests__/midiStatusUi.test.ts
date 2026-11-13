@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getMidiBadgeUi } from '../midiStatusUi';
+import { getMidiBadgeUi, parseMidiError } from '../midiStatusUi';
 import { MidiStatus } from '../../types/midi';
 
 const base: MidiStatus = {
@@ -28,5 +28,20 @@ describe('getMidiBadgeUi (#2)', () => {
     const connected = getMidiBadgeUi({ ...base, connected: true, deviceName: 'Keystation' });
     expect(connected.showRetry).toBe(false);
     expect(connected.label).toContain('Keystation');
+  });
+
+  it('classifies WebMIDI errors into Swedish notice/error status payloads (#2)', () => {
+    expect(parseMidiError(new Error('add-on required'))).toEqual({
+      error: 'MIDI kräver behörighet/tillägg i Firefox (QWERTY/Mus aktiv).',
+      errorKind: 'notice',
+    });
+    expect(parseMidiError(Object.assign(new Error('denied'), { name: 'NotAllowedError' }))).toEqual({
+      error: 'MIDI-behörighet nekad (QWERTY/Mus aktiv).',
+      errorKind: 'error',
+    });
+    expect(parseMidiError('unknown')).toEqual({
+      error: 'Kunde inte ansluta MIDI (QWERTY/Mus aktiv).',
+      errorKind: 'notice',
+    });
   });
 });

@@ -1,32 +1,15 @@
 import { MidiStatus, ParsedMidiEvent } from '../types/midi';
 import { MidiFrameParser } from './midiParser';
+import { parseMidiError } from '../utils/midiStatusUi';
 
-interface SimpleMidiMessageEvent {
-  data: Uint8Array;
-}
-
+interface SimpleMidiMessageEvent { data: Uint8Array; }
 interface SimpleMidiInput {
   name?: string | null;
   onmidimessage: ((msg: SimpleMidiMessageEvent) => void) | null;
 }
-
 interface SimpleMidiAccess {
   inputs: { values(): IterableIterator<SimpleMidiInput> };
   onstatechange: (() => void) | null;
-}
-
-function parseMidiError(err: unknown): { error: string; errorKind: 'notice' | 'error' } {
-  const msg = err && typeof err === 'object'
-    ? `${(err as { name?: string }).name ?? ''} ${(err as { message?: string }).message ?? ''}`
-    : String(err);
-  const text = msg.toLowerCase();
-  if (text.includes('add-on') || text.includes('no devices') || text.includes('not detected')) {
-    return { error: 'MIDI kräver behörighet/tillägg i Firefox (QWERTY/Mus aktiv).', errorKind: 'notice' };
-  }
-  if (text.includes('securityerror') || text.includes('notallowederror') || text.includes('permission') || text.includes('denied')) {
-    return { error: 'MIDI-behörighet nekad (QWERTY/Mus aktiv).', errorKind: 'error' };
-  }
-  return { error: 'Kunde inte ansluta MIDI (QWERTY/Mus aktiv).', errorKind: 'notice' };
 }
 
 export class MidiManager {
@@ -133,6 +116,10 @@ export class MidiManager {
         }
         if (this.status.detectedOctaveOffset !== this.parser.getDetectedOffset()) this.notifyStatus();
       };
+    }
+    if (hasInput) {
+      this.status.error = null;
+      this.status.errorKind = undefined;
     }
     this.status.connected = hasInput;
     this.status.deviceName = name;

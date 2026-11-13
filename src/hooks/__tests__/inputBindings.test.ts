@@ -58,6 +58,35 @@ describe('bindPracticeInputs preventDefault & modifier guards (#1)', () => {
     expect(ctrlPrevent).not.toHaveBeenCalled();
     expect(pressNote).toHaveBeenCalledTimes(1);
 
+    // Held repeat key must still preventDefault (so Firefox Quick Find does not open) without re-triggering note
+    const repeatPrevent = vi.fn();
+    onKeyDown({ code: 'Quote', repeat: true, ctrlKey: false, metaKey: false, altKey: false, shiftKey: false, target: null, preventDefault: repeatPrevent, stopPropagation: vi.fn() });
+    expect(repeatPrevent).toHaveBeenCalledTimes(1);
+    expect(pressNote).toHaveBeenCalledTimes(1);
+
+    cleanup();
+  });
+
+  it('blurs header buttons on Space while preserving Tab focus on piano keys (#3)', () => {
+    class FakeButton {
+      private inHeader: boolean;
+      blur = vi.fn();
+      constructor(inHeader: boolean) { this.inHeader = inHeader; }
+      closest(sel: string) { return sel === 'header' && this.inHeader ? {} : null; }
+    }
+    vi.stubGlobal('HTMLButtonElement', FakeButton);
+    const { onKeyDown, cleanup } = setupBindings();
+
+    const headerBtn = new FakeButton(true);
+    vi.stubGlobal('document', { activeElement: headerBtn });
+    onKeyDown({ code: 'Space', repeat: false, ctrlKey: false, metaKey: false, altKey: false, shiftKey: false, target: headerBtn, preventDefault: vi.fn(), stopPropagation: vi.fn() });
+    expect(headerBtn.blur).toHaveBeenCalledTimes(1);
+
+    const keyBtn = new FakeButton(false);
+    vi.stubGlobal('document', { activeElement: keyBtn });
+    onKeyDown({ code: 'Space', repeat: false, ctrlKey: false, metaKey: false, altKey: false, shiftKey: false, target: keyBtn, preventDefault: vi.fn(), stopPropagation: vi.fn() });
+    expect(keyBtn.blur).not.toHaveBeenCalled();
+
     cleanup();
   });
 });

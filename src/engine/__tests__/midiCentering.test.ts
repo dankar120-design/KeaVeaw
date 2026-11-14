@@ -68,7 +68,7 @@ describe('Keystation 32 hardware range C3–G5 & uniform octave centering (#10)'
     const onHigh = p.parse(new Uint8Array([0x90, 91, 110]));
     expect(onHigh).toEqual([
       { type: 'noteOff', midi: 60, rawMidi: 60 },
-      { type: 'noteOn', midi: 48, velocity: 100 / 127, rawMidi: 60 },
+      { type: 'noteOn', midi: 48, velocity: 100 / 127, rawMidi: 60, rebalance: true },
       { type: 'noteOn', midi: 79, velocity: 110 / 127, rawMidi: 91 },
     ]);
     expect(p.parse(new Uint8Array([0x90, 64, 90]))[0]).toMatchObject({ type: 'noteOn', midi: 52, rawMidi: 64 });

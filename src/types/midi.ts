@@ -42,7 +42,7 @@ export interface Song {
 }
 
 export type ParsedMidiEvent =
-  | { type: 'noteOn'; midi: number; velocity: number; rawMidi: number }
+  | { type: 'noteOn'; midi: number; velocity: number; rawMidi: number; rebalance?: boolean }
   | { type: 'noteOff'; midi: number; rawMidi: number }
   | { type: 'sustain'; down: boolean }
   | { type: 'macro'; action: MacroAction };

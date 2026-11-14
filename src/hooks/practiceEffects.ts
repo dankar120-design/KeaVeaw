@@ -114,8 +114,9 @@ export function setsEqual(a: Set<number>, b: Set<number>): boolean {
   return true;
 }
 
-export function shouldAutoStartOnPress(snap: TransportSnapshot, isPlaying: boolean, midi: number): boolean {
-  return !isPlaying
+export function shouldAutoStartOnPress(snap: TransportSnapshot, isPlaying: boolean, midi: number, isRebalance = false): boolean {
+  return !isRebalance
+    && !isPlaying
     && Math.abs(snap.beat - snap.loopStart) < 1e-4
     && snap.waitingNotes.some((w) => w.midi === midi);
 }

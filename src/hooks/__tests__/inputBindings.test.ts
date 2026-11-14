@@ -105,4 +105,25 @@ describe('bindPracticeInputs preventDefault & modifier guards (#1)', () => {
 
     cleanup();
   });
+
+  it('forwards ev.rebalance flag to pressNote for rebalanced chord events (DEC-004)', () => {
+    const listeners = new Map<string, (e: unknown) => void>();
+    vi.stubGlobal('window', {
+      addEventListener: (t: string, fn: (e: unknown) => void) => listeners.set(t, fn),
+      removeEventListener: (t: string) => listeners.delete(t),
+    });
+    let emitEvent!: (ev: unknown) => void;
+    const pressNote = vi.fn();
+    const cleanup = bindPracticeInputs({
+      midi: { onStatusChange: () => () => {}, onEvent: (cb: (ev: unknown) => void) => { emitEvent = cb; return () => {}; }, connect: vi.fn(), disconnect: vi.fn() } as unknown as MidiManager,
+      audio: { setSustainPedal: vi.fn(), noteOff: vi.fn(), dispose: vi.fn() } as unknown as AudioEngine,
+      transport: { shiftLoop: vi.fn() } as unknown as Transport,
+      holds: new MultiSourceHoldTracker(), heldQwerty: new Map(), octaveRef: { current: 0 },
+      setMidiStatus: vi.fn(), setOctaveShift: vi.fn(), pressNote, releaseNote: vi.fn(),
+      syncVisualNotes: vi.fn(), togglePlay: vi.fn(), resetLoop: vi.fn(), cycleHand: vi.fn(), commitSnapshot: vi.fn(),
+    });
+    emitEvent({ type: 'noteOn', midi: 48, velocity: 0.75, rawMidi: 60, rebalance: true });
+    expect(pressNote).toHaveBeenCalledWith(48, 'midi', 0.75, true);
+    cleanup();
+  });
 });

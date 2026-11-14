@@ -14,7 +14,7 @@ export interface InputBindingsDeps {
   octaveRef: { current: number };
   setMidiStatus: (s: MidiStatus) => void;
   setOctaveShift: (shift: number) => void;
-  pressNote: (midi: number, src: InputSource, velocity?: number) => void;
+  pressNote: (midi: number, src: InputSource, velocity?: number, isRebalance?: boolean) => void;
   releaseNote: (midi: number, src: InputSource) => void;
   syncVisualNotes: () => void;
   togglePlay: () => void;
@@ -35,7 +35,7 @@ export function bindPracticeInputs(d: InputBindingsDeps): () => void {
     }
   });
   const unsubEvent = d.midi.onEvent((ev) => {
-    if (ev.type === 'noteOn') d.pressNote(ev.midi, 'midi', ev.velocity);
+    if (ev.type === 'noteOn') d.pressNote(ev.midi, 'midi', ev.velocity, ev.rebalance);
     else if (ev.type === 'noteOff') d.releaseNote(ev.midi, 'midi');
     else if (ev.type === 'sustain') { d.audio.setSustainPedal(ev.down); d.syncVisualNotes(); }
     else if (ev.action === 'LOOP_RESET') d.resetLoop();

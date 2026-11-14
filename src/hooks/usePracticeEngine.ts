@@ -71,15 +71,15 @@ export function usePracticeEngine() {
     drawRef.current?.();
   }, [syncVisualNotes]);
 
-  const pressNote = useCallback((midi: number, src: InputSource, velocity = 0.8) => {
+  const pressNote = useCallback((midi: number, src: InputSource, velocity = 0.8, isRebalance = false) => {
     if (src === 'midi') notifyMidiBlocked(src);
     else unlockAudio();
-    if (shouldAutoStartOnPress(snapshotRef.current, playingRef.current, midi)) {
+    if (shouldAutoStartOnPress(snapshotRef.current, playingRef.current, midi, isRebalance)) {
       playingRef.current = true;
       setPlaying(true);
       commitSnapshot(transportRef.current.setPlaying(true), true);
     }
-    transportRef.current.registerNoteOn(midi);
+    if (!isRebalance) transportRef.current.registerNoteOn(midi);
     const wasMidiHeld = src === 'midi' && holdsRef.current.hasSource(midi, 'midi');
     const isFirstHold = holdsRef.current.press(midi, src);
     if (isFirstHold || wasMidiHeld) audioRef.current.noteOn(midi, velocity, playingRef.current);

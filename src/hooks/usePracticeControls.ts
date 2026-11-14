@@ -40,8 +40,8 @@ export function usePracticeControls(d: PracticeControlDeps) {
     const next = cycleHandIsolation(d.handRef.current);
     d.handRef.current = next;
     d.setHandIsolation(next);
-    d.transportRef.current.setHandIsolation(next);
-    d.commitSnapshot(d.transportRef.current.getSnapshot(), true);
+    const snap = d.transportRef.current.setHandIsolation(next);
+    d.commitSnapshot(snap, true);
   }, [d]);
 
   const selectSong = useCallback((songId: string) => {
@@ -64,8 +64,8 @@ export function usePracticeControls(d: PracticeControlDeps) {
   const changeHandIsolation = useCallback((mode: HandIsolation) => {
     d.handRef.current = mode;
     d.setHandIsolation(mode);
-    d.transportRef.current.setHandIsolation(mode);
-    d.commitSnapshot(d.transportRef.current.getSnapshot(), true);
+    const snap = d.transportRef.current.setHandIsolation(mode);
+    d.commitSnapshot(snap, true);
   }, [d]);
 
   const changeSustainMode = useCallback((mode: SustainMode) => {

@@ -80,7 +80,7 @@ export function applyTransportEffects(
   }
   if (snap.shouldClearSustain) audio.clearSustain();
   for (const midi of snap.autoNoteOffs) {
-    audio.noteOff(midi);
+    if (!(preserveUserHeld && userHeldMidis?.has(midi))) audio.noteOff(midi);
     autoActive.delete(midi);
   }
   for (const note of snap.autoNoteOns) {
@@ -91,6 +91,7 @@ export function applyTransportEffects(
 }
 
 export function cycleHandIsolation(mode: HandIsolation): HandIsolation {
+  if (mode === 'DEMO') return 'BOTH';
   if (mode === 'BOTH') return 'RIGHT_ONLY';
   if (mode === 'RIGHT_ONLY') return 'LEFT_ONLY';
   return 'BOTH';

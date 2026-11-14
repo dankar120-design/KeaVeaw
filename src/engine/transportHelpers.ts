@@ -32,6 +32,7 @@ export function buildBeatGroups(song: Song): BeatGroup[] {
 }
 
 export function splitHands(notes: SongNote[], isolation: HandIsolation): { user: SongNote[]; auto: SongNote[] } {
+  if (isolation === 'DEMO') return { user: [], auto: notes };
   if (isolation === 'BOTH') return { user: notes, auto: [] };
   const targetHand = isolation === 'RIGHT_ONLY' ? 'R' : 'L';
   return { user: notes.filter((n) => n.hand === targetHand), auto: notes.filter((n) => n.hand !== targetHand) };

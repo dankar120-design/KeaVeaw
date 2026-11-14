@@ -1,7 +1,8 @@
-import { AudioState, SustainMode } from '../types/midi';
+import { AudioState, SustainMode, SynthPreset } from '../types/midi';
 import { PendingNoteQueue } from './pendingNotes';
 import { SustainBuffer } from './sustainBuffer';
-import { ActiveVoice, createSynthVoice, fadeVoice, stopVoiceNow } from './synthVoice';
+import { ActiveVoice, createSynthVoice } from './synthVoice';
+import { fadeAndStopVoice, forceStopVoice, stealOldestVoice } from './voicePoolHelpers';
 
 const MAX_VOICES = 24;
 const VOICE_MAX_DECAY_MS = 2850;
@@ -12,6 +13,7 @@ export class AudioEngine {
   private voiceTimers = new Map<number, ReturnType<typeof setTimeout>>();
   private sustain = new SustainBuffer();
   private pendingNotes = new PendingNoteQueue();
+  private preset: SynthPreset = 'epiano';
   private onVoiceChange: (() => void) | null = null;
   private onStateChange: ((state: AudioState) => void) | null = null;
   private lastNotifiedState: AudioState | null = null;
@@ -20,6 +22,8 @@ export class AudioEngine {
   setOnStateChange(cb: ((state: AudioState) => void) | null): void { this.onStateChange = cb; }
   getState(): AudioState { return this.ctx?.state === 'running' ? 'running' : 'suspended'; }
   getSustainMode(): SustainMode { return this.sustain.getMode(); }
+  getPreset(): SynthPreset { return this.preset; }
+  setPreset(preset: SynthPreset): void { this.preset = preset; }
   isSustainHeld(): boolean { return this.sustain.isSustainActive() && this.getSustainedNotes().length > 0; }
   getSustainedNotes(): number[] { return this.sustain.getSustainedOnly().filter((m) => this.voices.has(m)); }
 
@@ -43,42 +47,52 @@ export class AudioEngine {
     }
 
     const releaseNotes = this.sustain.onNoteOn(midi, isSongMode);
-    for (const m of releaseNotes) this.fadeAndStopVoice(m, 80);
+    for (const m of releaseNotes) this.fadeAndStop(m, 80);
 
-    if (this.voices.has(midi)) this.forceStopVoice(midi);
-    if (this.voices.size >= MAX_VOICES) this.stealOldestVoice();
-    const voice = createSynthVoice(ctx, midi, velocity);
+    if (this.voices.has(midi)) this.forceStop(midi);
+    if (this.voices.size >= MAX_VOICES) stealOldestVoice(this.voices, this.voiceTimers);
+    const voice = createSynthVoice(ctx, midi, velocity, this.preset);
     this.voices.set(midi, voice);
     this.voiceTimers.set(midi, setTimeout(() => {
       if (this.voices.get(midi) !== voice) return;
       this.sustain.expireSustained(midi);
-      this.fadeAndStopVoice(midi, 50);
+      this.fadeAndStop(midi, 50);
       this.onVoiceChange?.();
     }, VOICE_MAX_DECAY_MS));
   }
 
   noteOff(midi: number): void {
     if (this.pendingNotes.markReleased(midi)) return;
-    if (this.sustain.onNoteOff(midi)) this.fadeAndStopVoice(midi, 80);
+    if (this.sustain.onNoteOff(midi)) this.fadeAndStop(midi, 80);
     else if (!this.voices.has(midi)) this.sustain.expireSustained(midi);
   }
 
-  setSustainMode(mode: SustainMode): void { for (const m of this.sustain.setMode(mode)) this.fadeAndStopVoice(m, 80); }
-  setSustainPedal(down: boolean): void { for (const m of this.sustain.onSustainPedal(down)) this.fadeAndStopVoice(m, 80); }
-  clearSustain(releaseMs = 80): void { for (const m of this.sustain.clearSustain()) this.fadeAndStopVoice(m, releaseMs); }
-  allNotesOff(): void { this.pendingNotes.clear(); for (const m of this.sustain.clearAll()) this.fadeAndStopVoice(m, 40); }
+  setSustainMode(mode: SustainMode): void { for (const m of this.sustain.setMode(mode)) this.fadeAndStop(m, 80); }
+  setSustainPedal(down: boolean): void { for (const m of this.sustain.onSustainPedal(down)) this.fadeAndStop(m, 80); }
+  clearSustain(releaseMs = 80): void { for (const m of this.sustain.clearSustain()) this.fadeAndStop(m, releaseMs); }
+  allNotesOff(): void { this.pendingNotes.clear(); for (const m of this.sustain.clearAll()) this.fadeAndStop(m, 40); }
 
   dispose(): void {
     this.onVoiceChange = null;
     this.onStateChange = null;
     for (const timer of this.voiceTimers.values()) clearTimeout(timer);
     this.voiceTimers.clear();
-    this.allNotesOff();
+    this.pendingNotes.clear();
+    this.sustain.clearAll();
+    for (const midi of [...this.voices.keys()]) this.forceStop(midi);
     if (this.ctx) {
       this.ctx.onstatechange = null;
       void this.ctx.close();
       this.ctx = null;
     }
+  }
+
+  private fadeAndStop(midi: number, releaseMs: number): void {
+    fadeAndStopVoice(this.ctx, this.voices, this.voiceTimers, midi, releaseMs);
+  }
+
+  private forceStop(midi: number): void {
+    forceStopVoice(this.voices, this.voiceTimers, midi);
   }
 
   private handleStateChange(): void {
@@ -107,42 +121,5 @@ export class AudioEngine {
       }
     }
     return this.ctx;
-  }
-
-  private stealOldestVoice(): void {
-    let oldestMidi: number | null = null;
-    let oldestTime = Infinity;
-    for (const [m, v] of this.voices) {
-      if (v.startedAt < oldestTime) {
-        oldestTime = v.startedAt;
-        oldestMidi = m;
-      }
-    }
-    if (oldestMidi !== null) this.forceStopVoice(oldestMidi);
-  }
-
-  private clearVoiceTimer(midi: number): void {
-    const timer = this.voiceTimers.get(midi);
-    if (timer !== undefined) {
-      clearTimeout(timer);
-      this.voiceTimers.delete(midi);
-    }
-  }
-
-  private takeVoice(midi: number): ActiveVoice | undefined {
-    this.clearVoiceTimer(midi);
-    const v = this.voices.get(midi);
-    if (v) this.voices.delete(midi);
-    return v;
-  }
-
-  private fadeAndStopVoice(midi: number, releaseMs: number): void {
-    const v = this.takeVoice(midi);
-    if (v && this.ctx) fadeVoice(this.ctx, v, releaseMs);
-  }
-
-  private forceStopVoice(midi: number): void {
-    const v = this.takeVoice(midi);
-    if (v) stopVoiceNow(v);
   }
 }

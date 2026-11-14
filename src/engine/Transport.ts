@@ -27,17 +27,32 @@ export class Transport {
   }
 
   setSong(song: Song): TransportSnapshot {
-    this.song = song;
-    this.groups = buildBeatGroups(song);
-    this.bpm = song.bpm;
-    this.loopStart = 0;
-    this.loopEnd = getSongEndBeat(song);
+    this.song = song; this.groups = buildBeatGroups(song);
+    this.bpm = song.bpm; this.loopStart = 0; this.loopEnd = getSongEndBeat(song);
     return this.resetLoop();
   }
 
   setBpm(bpm: number): void { this.bpm = Math.max(40, Math.min(180, Math.round(bpm))); }
   getBpm(): number { return this.bpm; }
-  setHandIsolation(mode: HandIsolation): void { this.handIsolation = mode; this.ws.matchedInPending.clear(); }
+  setHandIsolation(mode: HandIsolation): TransportSnapshot {
+    const prevMode = this.handIsolation;
+    const prevTriggered = new Set(this.triggeredAutoGroups);
+    this.handIsolation = mode;
+    const canceledOffs = this.activeAuto.map((v) => v.midi);
+    this.activeAuto = [];
+    this.ws.matchedInPending.clear(); this.ws.completedGroups.clear(); this.triggeredAutoGroups.clear();
+    for (let i = 0; i < this.groups.length; i++) {
+      const b = this.groups[i].beat;
+      if (b < this.beat - 1e-4) { this.ws.completedGroups.add(i); this.triggeredAutoGroups.add(i); }
+      else if (Math.abs(b - this.beat) < 1e-4 && prevTriggered.has(i)) this.triggeredAutoGroups.add(i);
+    }
+    if (mode === 'DEMO') {
+      this.ws.isFrozen = false; this.ws.speedMultiplier = 1;
+      this.ws.missElapsedMs = 0; this.ws.hitQueue = [];
+    }
+    const clearSustain = prevMode !== mode && (prevMode === 'DEMO' || canceledOffs.length > 0);
+    return this.snapshot([], canceledOffs, clearSustain, false);
+  }
   getHandIsolation(): HandIsolation { return this.handIsolation; }
   getSnapshot(): TransportSnapshot { return this.snapshot([], [], false, false); }
 

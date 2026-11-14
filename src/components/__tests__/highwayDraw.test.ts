@@ -5,14 +5,18 @@ import { fMinorArpeggio } from '../../data/songs/fMinorArpeggio';
 
 function makeMockCtx() {
   const texts: string[] = [];
+  const alphas: number[] = [];
+  let _alpha = 1;
   const ctx = {
-    fillStyle: '', strokeStyle: '', lineWidth: 1, globalAlpha: 1, font: '',
+    fillStyle: '', strokeStyle: '', lineWidth: 1, font: '',
+    get globalAlpha() { return _alpha; },
+    set globalAlpha(v: number) { _alpha = v; alphas.push(v); },
     fillRect: vi.fn(), beginPath: vi.fn(), moveTo: vi.fn(), lineTo: vi.fn(),
     quadraticCurveTo: vi.fn(), closePath: vi.fn(), fill: vi.fn(), stroke: vi.fn(),
     measureText: (t: string) => ({ width: t.length * 7 }),
     fillText: vi.fn((text: string) => { texts.push(text); }),
   };
-  return { ctx: ctx as unknown as CanvasRenderingContext2D, texts };
+  return { ctx: ctx as unknown as CanvasRenderingContext2D, texts, alphas };
 }
 
 describe('drawHighwayFrame paused wait-mode badge (#9)', () => {
@@ -59,5 +63,26 @@ describe('drawHighwayFrame paused wait-mode badge (#9)', () => {
     const d2 = makeMockCtx();
     drawHighwayFrame(d2.ctx, 800, 300, { notes: fMinorArpeggio.notes, timeSignature: [6, 8], handIsolation: 'BOTH', state: resumedSnap });
     expect(d2.texts).toContain('Fm · VÄNTAR');
+  });
+
+  it('draws both hands with globalAlpha 0.95 in DEMO mode without dimming', () => {
+    const demoDraw = makeMockCtx();
+    drawHighwayFrame(demoDraw.ctx, 800, 300, {
+      notes: fMinorArpeggio.notes.slice(0, 6),
+      timeSignature: [6, 8],
+      handIsolation: 'DEMO',
+      state: { ...baseState, playing: true, isFrozen: false },
+    });
+    expect(demoDraw.alphas).toContain(0.95);
+    expect(demoDraw.alphas).not.toContain(0.35);
+
+    const isoDraw = makeMockCtx();
+    drawHighwayFrame(isoDraw.ctx, 800, 300, {
+      notes: fMinorArpeggio.notes.slice(0, 6),
+      timeSignature: [6, 8],
+      handIsolation: 'RIGHT_ONLY',
+      state: { ...baseState, playing: true, isFrozen: false },
+    });
+    expect(isoDraw.alphas).toContain(0.35);
   });
 });

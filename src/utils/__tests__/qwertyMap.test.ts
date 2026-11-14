@@ -1,6 +1,12 @@
 import { describe, it, expect, vi } from 'vitest';
 import { KEY_LAYOUTS, WHITE_KEY_COUNT } from '../musicTheory';
-import { applyOctaveShift, getOctaveDeltaFromCode, isPlayableKeyEvent, mapCodeToMidi } from '../qwertyMap';
+import {
+  applyOctaveShift,
+  getOctaveDeltaFromCode,
+  getQwertyLabelMap,
+  isPlayableKeyEvent,
+  mapCodeToMidi,
+} from '../qwertyMap';
 
 describe('KEY_LAYOUTS 32-key geometry bounds (P3-2)', () => {
   it('defines 19 white keys summing to ~1.0 and 13 black keys inside [0, 1]', () => {
@@ -34,11 +40,11 @@ describe('QWERTY input mapping & KeyZ/KeyX guards (P3-3)', () => {
   });
 
   it('keeps mapped notes inside 48..79 and flushes held keys on KeyZ/KeyX octave shifts', () => {
-    expect(mapCodeToMidi('KeyA', 0)).toBe(48); // C3
-    expect(mapCodeToMidi('KeyG', 24)).toBe(79); // G5
-    expect(mapCodeToMidi('KeyH', 24)).toBeNull(); // A5 (> 79) -> rejected
-    expect(mapCodeToMidi('KeyR', 0)).toBeNull(); // unmapped gap between E3 and F3
-    expect(mapCodeToMidi('BracketLeft', 0)).toBe(66); // F#4
+    expect(mapCodeToMidi('KeyA', 0)).toBe(48);
+    expect(mapCodeToMidi('KeyG', 24)).toBe(79);
+    expect(mapCodeToMidi('KeyH', 24)).toBeNull();
+    expect(mapCodeToMidi('KeyR', 0)).toBeNull();
+    expect(mapCodeToMidi('BracketLeft', 0)).toBe(66);
 
     expect(getOctaveDeltaFromCode('KeyZ')).toBe(-12);
     expect(getOctaveDeltaFromCode('KeyX')).toBe(12);
@@ -53,5 +59,32 @@ describe('QWERTY input mapping & KeyZ/KeyX guards (P3-3)', () => {
     expect(held.size).toBe(0);
     expect(applyOctaveShift(24, 12, held, onRelease)).toBe(24);
     expect(applyOctaveShift(0, -12, held, onRelease)).toBe(0);
+  });
+});
+
+describe('getQwertyLabelMap (P3-3 / Keyboard QWERTY hints)', () => {
+  it('returns active QWERTY key labels for octaveShift = 0 within 48..79', () => {
+    const map0 = getQwertyLabelMap(0);
+    expect(map0[48]).toBe('A');
+    expect(map0[49]).toBe('W');
+    expect(map0[60]).toBe('K');
+    expect(map0[64]).toBe(';');
+    expect(map0[65]).toBe("'");
+    expect(map0[66]).toBe('[');
+    expect(Object.keys(map0).length).toBe(19);
+  });
+
+  it('shifts labels by octaveShift and drops out-of-range keys outside 48..79', () => {
+    const map12 = getQwertyLabelMap(12);
+    expect(map12[60]).toBe('A');
+    expect(map12[72]).toBe('K');
+    expect(map12[78]).toBe('[');
+    expect(map12[48]).toBeUndefined();
+
+    const map24 = getQwertyLabelMap(24);
+    expect(map24[72]).toBe('A');
+    expect(map24[79]).toBe('G');
+    expect(map24[80]).toBeUndefined();
+    expect(Object.keys(map24).length).toBe(8);
   });
 });

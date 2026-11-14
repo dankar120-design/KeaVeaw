@@ -101,7 +101,8 @@ function drawNotes(
       const x = key.xNorm * w + 1;
       const nw = Math.max(4, key.wNorm * w - 2);
       const nh = Math.max(8, yBottom - yTop);
-      const isAuto = (handIsolation === 'RIGHT_ONLY' && n.hand === 'L') || (handIsolation === 'LEFT_ONLY' && n.hand === 'R');
+      const isAuto = handIsolation !== 'DEMO'
+        && ((handIsolation === 'RIGHT_ONLY' && n.hand === 'L') || (handIsolation === 'LEFT_ONLY' && n.hand === 'R'));
 
       ctx.globalAlpha = isAuto ? 0.35 : 0.95;
       ctx.fillStyle = n.hand === 'R' ? '#06B6D4' : '#F59E0B';

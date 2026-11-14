@@ -92,10 +92,30 @@ describe('applyTransportEffects, cycleHandIsolation & diffs (P4-2, P4-3)', () =>
     expect(autoActive.size).toBe(0);
   });
 
+  it('does not call noteOff for autoNoteOffs when note is in userHeldMidis and preserveUserHeld is true', () => {
+    const sink = { noteOn: vi.fn(), noteOff: vi.fn(), clearSustain: vi.fn(), allNotesOff: vi.fn() };
+    const autoActive = new Set<number>([60, 64]);
+    const userHeld = new Set<number>([60]);
+
+    applyTransportEffects(
+      makeSnapshot({ autoNoteOffs: [60, 64] }),
+      sink,
+      autoActive,
+      true,
+      userHeld
+    );
+
+    expect(sink.noteOff).toHaveBeenCalledWith(64);
+    expect(sink.noteOff).not.toHaveBeenCalledWith(60);
+    expect(autoActive.has(60)).toBe(false);
+    expect(autoActive.has(64)).toBe(false);
+  });
+
   it('cycles HandIsolation and compares sets/snapshots deterministically', () => {
     expect(cycleHandIsolation('BOTH')).toBe('RIGHT_ONLY');
     expect(cycleHandIsolation('RIGHT_ONLY')).toBe('LEFT_ONLY');
     expect(cycleHandIsolation('LEFT_ONLY')).toBe('BOTH');
+    expect(cycleHandIsolation('DEMO')).toBe('BOTH');
 
     const holds = new MultiSourceHoldTracker();
     holds.press(60, 'midi');

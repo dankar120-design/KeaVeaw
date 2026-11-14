@@ -2,8 +2,9 @@ export const MIDI_MIN = 48; // C3
 export const MIDI_MAX = 79; // G5
 
 export type Hand = 'L' | 'R';
-export type HandIsolation = 'BOTH' | 'RIGHT_ONLY' | 'LEFT_ONLY';
+export type HandIsolation = 'BOTH' | 'RIGHT_ONLY' | 'LEFT_ONLY' | 'DEMO';
 export type SustainMode = 'AUTO_ROOT' | 'LATCH_TOGGLE' | 'MOMENTARY';
+export type SynthPreset = 'epiano' | 'bell' | 'warm_pad';
 export type NoteRole = 'root' | 'fifth' | 'third' | 'seventh' | 'melody';
 export type AudioState = 'suspended' | 'running';
 export type MacroAction = 'LOOP_RESET' | 'CYCLE_HAND';

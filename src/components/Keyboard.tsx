@@ -1,6 +1,14 @@
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { ChordMarker, SongNote } from '../types/midi';
 import { KEY_LAYOUTS, chordPitchClasses, intervalLabel } from '../utils/musicTheory';
+import {
+  clearKeyPointers,
+  handleKeyButtonKeyDown,
+  handleKeyButtonKeyUp,
+  moveKeyPointer,
+  pressKeyPointer,
+  releaseKeyPointer,
+} from './keyboardPointer';
 
 export interface KeyboardProps {
   activeNotes: Set<number>;
@@ -9,6 +17,7 @@ export interface KeyboardProps {
   activeChord: ChordMarker | null;
   onNoteOn: (midi: number) => void;
   onNoteOff: (midi: number) => void;
+  qwertyLabels?: Record<number, string>;
 }
 
 const REFERENCE_NAMES = new Set(['C3', 'C4', 'C5', 'G5']);
@@ -20,8 +29,20 @@ export function Keyboard({
   activeChord,
   onNoteOn,
   onNoteOff,
+  qwertyLabels,
 }: KeyboardProps) {
-  const pointerMap = useRef<Map<number, number>>(new Map());
+  const pointerMap = useRef<Map<number, number | null>>(new Map());
+  const pressedEnterMidis = useRef<Set<number>>(new Set());
+
+  useEffect(() => {
+    const onBlur = () => {
+      clearKeyPointers(pointerMap.current, onNoteOff);
+      for (const m of pressedEnterMidis.current) onNoteOff(m);
+      pressedEnterMidis.current.clear();
+    };
+    window.addEventListener('blur', onBlur);
+    return () => window.removeEventListener('blur', onBlur);
+  }, [onNoteOff]);
 
   const chordPcs = useMemo(
     () => (activeChord ? chordPitchClasses(activeChord.symbol) : new Set<number>()),
@@ -34,21 +55,23 @@ export function Keyboard({
     return map;
   }, [waitingNotes]);
 
-  const handlePointerDown = (e: React.PointerEvent<HTMLButtonElement>, midi: number) => {
+  // INVARIANT: Capture pointer on container and track pointerId->midi so multi-touch and glissando slides release properly.
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     e.preventDefault();
-    if (pointerMap.current.has(e.pointerId)) return;
     e.currentTarget.setPointerCapture?.(e.pointerId);
-    pointerMap.current.set(e.pointerId, midi);
-    onNoteOn(midi);
+    const target = e.target as HTMLElement | null;
+    const rawMidi = (target?.closest?.('[data-midi]') as HTMLElement | null)?.getAttribute('data-midi');
+    if (rawMidi) pressKeyPointer(pointerMap.current, e.pointerId, Number(rawMidi), onNoteOn);
   };
 
-  // INVARIANT: Track pointerId -> midi in a Map so multi-touch and fast slides release every captured key.
-  const handlePointerRelease = (e: React.PointerEvent<HTMLButtonElement>) => {
-    const midi = pointerMap.current.get(e.pointerId);
-    if (midi === undefined) return;
-    pointerMap.current.delete(e.pointerId);
-    onNoteOff(midi);
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!pointerMap.current.has(e.pointerId)) return;
+    const hit = typeof document !== 'undefined' ? (document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null) : null;
+    const rawMidi = (hit?.closest?.('[data-midi]') as HTMLElement | null)?.getAttribute('data-midi');
+    moveKeyPointer(pointerMap.current, e.pointerId, rawMidi ? Number(rawMidi) : null, onNoteOn, onNoteOff);
   };
+
+  const handlePointerRelease = (e: React.PointerEvent<HTMLDivElement>) => releaseKeyPointer(pointerMap.current, e.pointerId, onNoteOff);
 
   const renderKey = (k: (typeof KEY_LAYOUTS)[number]) => {
     const isActive = activeNotes.has(k.midi);
@@ -63,16 +86,8 @@ export function Keyboard({
       : '';
 
     const baseBg = k.isBlack
-      ? isActive
-        ? 'bg-cyan-400 text-slate-950'
-        : inChord
-          ? 'bg-slate-700 text-slate-200 border-slate-600'
-          : 'bg-slate-900 text-slate-300 border-slate-700'
-      : isActive
-        ? 'bg-cyan-300 text-slate-950'
-        : inChord
-          ? 'bg-sky-50 text-slate-900'
-          : 'bg-slate-100 text-slate-800';
+      ? isActive ? 'bg-cyan-400 text-slate-950' : inChord ? 'bg-slate-700 text-slate-200 border-slate-600' : 'bg-slate-900 text-slate-300 border-slate-700'
+      : isActive ? 'bg-cyan-300 text-slate-950' : inChord ? 'bg-sky-50 text-slate-900' : 'bg-slate-100 text-slate-800';
 
     const sustainRing = isSustained && !isActive ? 'ring-2 ring-inset ring-emerald-400/80' : '';
     const focusClass = k.isBlack ? 'focus-visible:outline-cyan-300' : 'focus-visible:outline-slate-950';
@@ -81,36 +96,46 @@ export function Keyboard({
     const interval = waiting && activeChord ? intervalLabel(k.midi, activeChord.rootMidi) : '';
     const finger = waiting?.finger ? `F${waiting.finger}` : '';
     const showRef = !k.isBlack && REFERENCE_NAMES.has(k.name);
+    const label = qwertyLabels?.[k.midi];
 
     return (
       <button
         key={k.midi}
         type="button"
+        data-midi={k.midi}
         aria-label={k.name}
-        onPointerDown={(e) => handlePointerDown(e, k.midi)}
-        onPointerUp={handlePointerRelease}
-        onPointerCancel={handlePointerRelease}
-        onLostPointerCapture={handlePointerRelease}
+        onKeyDown={(e) => handleKeyButtonKeyDown(e, k.midi, pressedEnterMidis.current, onNoteOn)}
+        onKeyUp={(e) => handleKeyButtonKeyUp(e, k.midi, pressedEnterMidis.current, onNoteOff)}
         style={{ left: `${k.xNorm * 100}%`, width: `${k.wNorm * 100}%` }}
         className={`absolute top-0 flex flex-col items-center justify-end pb-1.5 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 ${focusClass} ${heightClass} ${baseBg} ${waitBorder} ${sustainRing}`}
       >
+        {k.midi === 60 && <span data-testid="c4-anchor" className="pointer-events-none absolute top-1.5 h-1.5 w-1.5 rounded-full bg-amber-400" />}
         {(interval || finger) && (
           <span className="mb-1 rounded bg-slate-950/85 px-1 py-0.5 text-[10px] font-semibold leading-none text-white">
             {[interval, finger].filter(Boolean).join('·')}
           </span>
         )}
-        {showRef && <span className="text-[10px] font-medium text-slate-500">{k.name}</span>}
+        {showRef && <span className="text-[10px] font-medium leading-none text-slate-500">{k.name}</span>}
+        {label && (
+          <span data-testid="qwerty-label" className={`pointer-events-none text-[9px] font-semibold leading-none ${k.isBlack ? 'text-slate-400' : 'text-slate-500'}`}>
+            {label}
+          </span>
+        )}
       </button>
     );
   };
 
-  const whites = KEY_LAYOUTS.filter((k) => !k.isBlack);
-  const blacks = KEY_LAYOUTS.filter((k) => k.isBlack);
-
   return (
-    <div className="relative h-[clamp(112px,24dvh,176px)] w-full shrink-0 select-none overflow-hidden bg-slate-950 touch-none">
-      {whites.map(renderKey)}
-      {blacks.map(renderKey)}
+    <div
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerRelease}
+      onPointerCancel={handlePointerRelease}
+      onLostPointerCapture={handlePointerRelease}
+      className="relative h-[clamp(112px,24dvh,176px)] w-full shrink-0 select-none overflow-hidden bg-slate-950 touch-none"
+    >
+      {KEY_LAYOUTS.filter((k) => !k.isBlack).map(renderKey)}
+      {KEY_LAYOUTS.filter((k) => k.isBlack).map(renderKey)}
     </div>
   );
 }

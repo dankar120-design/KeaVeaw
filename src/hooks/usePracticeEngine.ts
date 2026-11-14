@@ -8,6 +8,7 @@ import { HighwayPlaybackState } from '../components/highwayDraw';
 import { bindPracticeInputs } from './inputBindings';
 import { useAudioStatus } from './useAudioStatus';
 import { usePracticeControls } from './usePracticeControls';
+import { usePracticePrefs } from './usePracticePrefs';
 import {
   applyTransportEffects,
   buildSnapshotDiffKey,
@@ -96,6 +97,7 @@ export function usePracticeEngine() {
     setHandIsolation, setSustainMode, unlockAudio, commitSnapshot, syncVisualNotes,
   }), [unlockAudio, commitSnapshot, syncVisualNotes]);
   const controls = usePracticeControls(controlDeps);
+  const prefs = usePracticePrefs(audioRef, octaveShift);
 
   // INVARIANT: Single central rAF runs solely while playing === true to drive Transport -> Audio -> Canvas atomically.
   useEffect(() => {
@@ -136,7 +138,7 @@ export function usePracticeEngine() {
   return {
     songs: SONGS, song, playing, bpm, handIsolation, sustainMode, audioState, audioPrompt, midiStatus, octaveShift,
     activeNotes, sustainedNotes, waitingNotes: uiSnap.waitingNotes, activeChord: uiSnap.activeChord,
-    drawRef, getPlaybackState, ...controls, unlockAudio,
+    drawRef, getPlaybackState, ...controls, ...prefs, unlockAudio,
     pressPointer: (m: number) => pressNote(m, 'pointer', 0.85),
     releasePointer: (m: number) => releaseNote(m, 'pointer'),
     enableAutoCenter: () => midiRef.current.setAutoCenterOctave(true),

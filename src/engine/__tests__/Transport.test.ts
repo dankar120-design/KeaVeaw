@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { MIDI_MAX, MIDI_MIN, Song } from '../../types/midi';
-import { SONGS } from '../../data/songs';
+import { CLASSIC_SONGS, LESSON_SONGS, SONGS } from '../../data/songs';
 import { Transport } from '../Transport';
 
 function makeSong(notes: Song['notes'], bpm = 120): Song {
@@ -15,8 +15,10 @@ function makeSong(notes: Song['notes'], bpm = 120): Song {
 }
 
 describe('Built-in SONGS dataset invariant (V2)', () => {
-  it('contains 4 songs with every note strictly inside MIDI 48..79', () => {
-    expect(SONGS.length).toBe(4);
+  it('contains 4 classic songs and 5 lessons with every note strictly inside MIDI 48..79', () => {
+    expect(CLASSIC_SONGS.length).toBe(4);
+    expect(LESSON_SONGS.length).toBe(5);
+    expect(SONGS.length).toBe(9);
     for (const song of SONGS) {
       expect(song.notes.length).toBeGreaterThan(16);
       for (const n of song.notes) {

@@ -21,6 +21,10 @@ export default function App() {
         onChangeHandIsolation={e.changeHandIsolation}
         sustainMode={e.sustainMode}
         onChangeSustainMode={e.changeSustainMode}
+        synthPreset={e.synthPreset}
+        onChangeSynthPreset={e.changeSynthPreset}
+        showQwertyHints={e.showQwertyHints}
+        onToggleQwertyHints={e.toggleQwertyHints}
         audioState={e.audioState}
         audioPrompt={e.audioPrompt}
         onUnlockAudio={e.unlockAudio}
@@ -47,6 +51,7 @@ export default function App() {
         activeChord={e.activeChord}
         onNoteOn={e.pressPointer}
         onNoteOff={e.releasePointer}
+        qwertyLabels={e.qwertyLabels}
       />
 
       <footer className="flex shrink-0 flex-wrap items-center justify-between gap-x-4 gap-y-0.5 border-t border-slate-800 bg-gray-950 px-4 py-1 text-[11px] text-slate-400">

@@ -88,4 +88,14 @@ describe('Hud audio state & MIDI prompt (#6)', () => {
     expect(shiftedHtml).toContain('Auto-centrerad (-12)');
     expect(shiftedHtml).toContain('Återställ');
   });
+
+  it('renders song/lesson optgroups, Demo mode, Klang selector, and Tangenter toggle', () => {
+    const html = renderToStaticMarkup(createElement(Hud, makeProps({ showQwertyHints: true, synthPreset: 'bell' })));
+    expect(html).toContain('label="Låtar"');
+    expect(html).toContain('label="Lektioner (C3–G5)"');
+    expect(html).toContain('Demo (Lyssna)');
+    expect(html).toContain('aria-label="Klang"');
+    expect(html).toContain('Tangenter');
+    expect(html).toContain('aria-pressed="true"');
+  });
 });

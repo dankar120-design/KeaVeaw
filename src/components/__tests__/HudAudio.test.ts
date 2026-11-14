@@ -55,4 +55,37 @@ describe('Hud audio state & MIDI prompt (#6)', () => {
     expect(html).toContain('ring-amber-200');
     expect(runningPromptHtml).not.toContain('Klicka Aktivera Ljud för att höra MIDI');
   });
+
+  it('always renders ↻ MIDI retry button even when connected', () => {
+    const connectedHtml = renderToStaticMarkup(createElement(Hud, makeProps({
+      midiStatus: {
+        supported: true,
+        connected: true,
+        deviceName: 'Keystation Mini 32',
+        error: null,
+        autoCenterOctave: false,
+        detectedOctaveOffset: 0,
+      },
+    })));
+
+    expect(connectedHtml).toContain('↻ MIDI');
+    expect(connectedHtml).toContain('aria-label="Återanslut MIDI"');
+  });
+
+  it('renders Auto-centrerad (-12) badge and Återställ button when activeCenterOffset is active', () => {
+    const shiftedHtml = renderToStaticMarkup(createElement(Hud, makeProps({
+      midiStatus: {
+        supported: true,
+        connected: true,
+        deviceName: 'Keystation Mini 32',
+        error: null,
+        autoCenterOctave: true,
+        activeCenterOffset: -12,
+        detectedOctaveOffset: 0,
+      },
+    })));
+
+    expect(shiftedHtml).toContain('Auto-centrerad (-12)');
+    expect(shiftedHtml).toContain('Återställ');
+  });
 });

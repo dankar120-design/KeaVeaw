@@ -1,5 +1,5 @@
 import { AudioState, HandIsolation, MidiStatus, Song, SustainMode } from '../types/midi';
-import { getMidiBadgeUi } from '../utils/midiStatusUi';
+import { MidiBadgeControls } from './MidiBadgeControls';
 
 export interface HudProps {
   songs: Song[];
@@ -21,30 +21,14 @@ export interface HudProps {
   onRetryMidi?: () => void;
   onEnableAutoCenter: () => void;
   onDismissOctaveWarning: () => void;
+  onResetAutoCenter?: () => void;
 }
 
-export function Hud({
-  songs,
-  selectedSongId,
-  onSelectSong,
-  playing,
-  onTogglePlay,
-  onResetLoop,
-  bpm,
-  onChangeBpm,
-  handIsolation,
-  onChangeHandIsolation,
-  sustainMode,
-  onChangeSustainMode,
-  audioState,
-  audioPrompt = false,
-  onUnlockAudio,
-  midiStatus,
-  onRetryMidi,
-  onEnableAutoCenter,
-  onDismissOctaveWarning,
-}: HudProps) {
-  const badgeUi = getMidiBadgeUi(midiStatus);
+export function Hud(p: HudProps) {
+  const { songs, selectedSongId, onSelectSong, playing, onTogglePlay, onResetLoop, bpm, onChangeBpm } = p;
+  const { handIsolation, onChangeHandIsolation, sustainMode, onChangeSustainMode } = p;
+  const { audioState, audioPrompt = false, onUnlockAudio, midiStatus, onRetryMidi } = p;
+  const { onEnableAutoCenter, onDismissOctaveWarning, onResetAutoCenter } = p;
 
   return (
     <header className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-gray-800 bg-gray-900 px-4 py-2.5 text-xs text-gray-100">
@@ -55,9 +39,7 @@ export function Hud({
           onChange={(e) => onSelectSong(e.target.value)}
           className="max-w-full min-w-0 rounded border border-gray-700 bg-gray-800 px-2.5 py-1.5 font-medium text-gray-100"
         >
-          {songs.map((s) => (
-            <option key={s.id} value={s.id}>{s.title}</option>
-          ))}
+          {songs.map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}
         </select>
 
         <button
@@ -120,29 +102,13 @@ export function Hud({
           </span>
         )}
 
-        <span className={`rounded border px-2.5 py-1.5 font-medium ${badgeUi.className}`}>{badgeUi.label}</span>
-
-        {badgeUi.showRetry && (
-          <button
-            type="button"
-            onClick={onRetryMidi}
-            className="rounded border border-gray-700 bg-gray-800 px-2 py-1.5 text-xs hover:bg-gray-700"
-          >
-            Försök igen
-          </button>
-        )}
-
-        {midiStatus.detectedOctaveOffset !== 0 && !midiStatus.autoCenterOctave && (
-          <div className="flex items-center gap-1.5 rounded border border-amber-600/70 bg-amber-950/70 px-2.5 py-1 text-amber-200">
-            <span>Oktav utanför F3–C6 ({midiStatus.detectedOctaveOffset > 0 ? `+${midiStatus.detectedOctaveOffset}` : midiStatus.detectedOctaveOffset})</span>
-            <button type="button" onClick={onEnableAutoCenter} className="rounded bg-amber-400 px-2 py-0.5 font-semibold text-slate-950">
-              Auto-centrera oktav
-            </button>
-            <button type="button" aria-label="Stäng oktavvarning" onClick={onDismissOctaveWarning} className="px-1 text-amber-300 hover:text-white">
-              ×
-            </button>
-          </div>
-        )}
+        <MidiBadgeControls
+          midiStatus={midiStatus}
+          onRetryMidi={onRetryMidi}
+          onEnableAutoCenter={onEnableAutoCenter}
+          onDismissOctaveWarning={onDismissOctaveWarning}
+          onResetAutoCenter={onResetAutoCenter}
+        />
       </div>
     </header>
   );

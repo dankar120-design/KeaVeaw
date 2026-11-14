@@ -24,6 +24,10 @@ export class MultiSourceHoldTracker {
     return wasEmpty;
   }
 
+  hasSource(midi: number, source: InputSource): boolean {
+    return this.holds.get(midi)?.has(source) ?? false;
+  }
+
   release(midi: number, source: InputSource): boolean {
     const sources = this.holds.get(midi);
     if (!sources || !sources.delete(source)) return false;

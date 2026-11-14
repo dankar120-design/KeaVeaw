@@ -64,8 +64,8 @@ describe('MidiFrameParser', () => {
     parser.clearDetectedOffset();
     expect(parser.getDetectedOffset()).toBe(0);
 
-    // Raw note 96 (C7, 1 octave above C6 [84]) -> minimum shift -12
-    parser.parse(new Uint8Array([0x90, 96, 100]));
+    // Raw note 91 (G6, 1 octave above G5 [79]) -> minimum shift -12
+    parser.parse(new Uint8Array([0x90, 91, 100]));
     expect(parser.getDetectedOffset()).toBe(-12);
   });
 });

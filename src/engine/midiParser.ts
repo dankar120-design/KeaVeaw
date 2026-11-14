@@ -1,4 +1,4 @@
-import { ParsedMidiEvent } from '../types/midi';
+import { MIDI_MAX, MIDI_MIN, ParsedMidiEvent } from '../types/midi';
 import { clampToRange, computeOctaveOffset } from '../utils/musicTheory';
 
 export interface MidiParserOptions {
@@ -16,6 +16,8 @@ export class MidiFrameParser {
   private lastSustainState = false;
   private autoCenter = false;
   private detectedOffset = 0;
+  private activeCenterOffset = 0;
+  private lastNoteOutOfRange = false;
   private activeNoteMap = new Map<number, number>();
 
   constructor(opts?: MidiParserOptions) {
@@ -23,14 +25,21 @@ export class MidiFrameParser {
     this.doubleClickMs = opts?.doubleClickMs ?? 350;
   }
 
-  setAutoCenter(val: boolean): void { this.autoCenter = val; }
+  setAutoCenter(val: boolean): void {
+    this.autoCenter = val;
+    this.activeCenterOffset = val && this.lastNoteOutOfRange ? this.detectedOffset : 0;
+  }
   getDetectedOffset(): number { return this.detectedOffset; }
+  getActiveCenterOffset(): number { return this.activeCenterOffset; }
   clearDetectedOffset(): void { this.detectedOffset = 0; }
+  clearCenterOffset(): void { this.activeCenterOffset = 0; }
 
   flush(): ParsedMidiEvent[] {
     const evs: ParsedMidiEvent[] = [];
     this.flushActiveNotes(evs);
     this.resetControllers(evs);
+    this.activeCenterOffset = 0;
+    this.lastNoteOutOfRange = false;
     return evs;
   }
 
@@ -62,13 +71,22 @@ export class MidiFrameParser {
       const vel = data.length > 2 ? data[2] : 0;
       const isOn = status === 0x90 && vel > 0;
       const offset = computeOctaveOffset(raw);
-      if (isOn && offset !== 0 && !this.autoCenter) this.detectedOffset = offset;
+      if (isOn && !this.autoCenter) {
+        this.lastNoteOutOfRange = offset !== 0;
+        if (offset !== 0) this.detectedOffset = offset;
+      }
       let midi: number;
       if (isOn) {
-        midi = clampToRange(this.autoCenter ? raw + offset : raw);
+        if (this.autoCenter) {
+          const shifted = raw + this.activeCenterOffset;
+          if (shifted < MIDI_MIN || shifted > MIDI_MAX) this.activeCenterOffset = offset;
+          midi = clampToRange(raw + this.activeCenterOffset);
+        } else {
+          midi = clampToRange(raw);
+        }
         this.activeNoteMap.set(raw, midi);
       } else {
-        midi = this.activeNoteMap.get(raw) ?? clampToRange(this.autoCenter ? raw + offset : raw);
+        midi = this.activeNoteMap.get(raw) ?? clampToRange(this.autoCenter ? raw + this.activeCenterOffset : raw);
         this.activeNoteMap.delete(raw);
       }
       evs.push(isOn ? { type: 'noteOn', midi, velocity: vel / 127, rawMidi: raw } : { type: 'noteOff', midi, rawMidi: raw });

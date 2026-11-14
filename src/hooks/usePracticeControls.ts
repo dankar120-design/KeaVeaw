@@ -4,7 +4,7 @@ import { AudioEngine } from '../engine/AudioEngine';
 import { MidiManager } from '../engine/MidiManager';
 import { Transport } from '../engine/Transport';
 import { HandIsolation, Song, SustainMode, TransportSnapshot } from '../types/midi';
-import { cycleHandIsolation } from './practiceEffects';
+import { cycleHandIsolation, MultiSourceHoldTracker } from './practiceEffects';
 
 export interface PracticeControlDeps {
   audioRef: MutableRefObject<AudioEngine>;
@@ -12,6 +12,7 @@ export interface PracticeControlDeps {
   transportRef: MutableRefObject<Transport>;
   playingRef: MutableRefObject<boolean>;
   handRef: MutableRefObject<HandIsolation>;
+  holdsRef: MutableRefObject<MultiSourceHoldTracker>;
   setSong: (s: Song) => void;
   setPlaying: (p: boolean) => void;
   setBpm: (b: number) => void;
@@ -74,8 +75,15 @@ export function usePracticeControls(d: PracticeControlDeps) {
   }, [d]);
 
   const retryMidi = useCallback(() => {
+    for (const m of d.holdsRef.current.releaseSource('midi')) d.audioRef.current.noteOff(m);
+    d.audioRef.current.setSustainPedal(false);
+    d.unlockAudio();
+    d.syncVisualNotes();
     void d.midiRef.current.connect();
   }, [d]);
 
-  return { togglePlay, resetLoop, cycleHand, selectSong, changeBpm, changeHandIsolation, changeSustainMode, retryMidi };
+  return {
+    togglePlay, resetLoop, cycleHand, selectSong, changeBpm, changeHandIsolation,
+    changeSustainMode, retryMidi, reconnectMidi: retryMidi,
+  };
 }

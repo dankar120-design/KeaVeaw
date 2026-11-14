@@ -1,5 +1,5 @@
-export const MIDI_MIN = 53; // F3
-export const MIDI_MAX = 84; // C6
+export const MIDI_MIN = 48; // C3
+export const MIDI_MAX = 79; // G5
 
 export type Hand = 'L' | 'R';
 export type HandIsolation = 'BOTH' | 'RIGHT_ONLY' | 'LEFT_ONLY';
@@ -55,6 +55,7 @@ export interface MidiStatus {
   errorKind?: 'notice' | 'error';
   detectedOctaveOffset: number;
   autoCenterOctave: boolean;
+  activeCenterOffset?: number;
 }
 
 export interface TransportSnapshot {

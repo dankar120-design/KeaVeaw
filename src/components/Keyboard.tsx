@@ -11,7 +11,7 @@ export interface KeyboardProps {
   onNoteOff: (midi: number) => void;
 }
 
-const REFERENCE_NAMES = new Set(['F3', 'C4', 'C5', 'C6']);
+const REFERENCE_NAMES = new Set(['C3', 'C4', 'C5', 'G5']);
 
 export function Keyboard({
   activeNotes,

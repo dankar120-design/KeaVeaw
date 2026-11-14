@@ -36,13 +36,13 @@ function setupBindings() {
 describe('bindPracticeInputs preventDefault & modifier guards (#1)', () => {
   afterEach(() => { vi.unstubAllGlobals(); });
 
-  it('calls preventDefault on mapped Quote (B4) and KeyZ octave key without blocking INPUT/Ctrl', () => {
+  it('calls preventDefault on mapped Quote (F4) and KeyZ octave key without blocking INPUT/Ctrl', () => {
     const { onKeyDown, pressNote, setOctaveShift, cleanup } = setupBindings();
 
     const quotePrevent = vi.fn();
     onKeyDown({ code: 'Quote', repeat: false, ctrlKey: false, metaKey: false, altKey: false, shiftKey: false, target: null, preventDefault: quotePrevent, stopPropagation: vi.fn() });
     expect(quotePrevent).toHaveBeenCalledTimes(1);
-    expect(pressNote).toHaveBeenCalledWith(71, 'qwerty', 0.8);
+    expect(pressNote).toHaveBeenCalledWith(65, 'qwerty', 0.8);
 
     const zPrevent = vi.fn();
     onKeyDown({ code: 'KeyZ', repeat: false, ctrlKey: false, metaKey: false, altKey: false, shiftKey: false, target: null, preventDefault: zPrevent, stopPropagation: vi.fn() });
@@ -62,6 +62,22 @@ describe('bindPracticeInputs preventDefault & modifier guards (#1)', () => {
     const repeatPrevent = vi.fn();
     onKeyDown({ code: 'Quote', repeat: true, ctrlKey: false, metaKey: false, altKey: false, shiftKey: false, target: null, preventDefault: repeatPrevent, stopPropagation: vi.fn() });
     expect(repeatPrevent).toHaveBeenCalledTimes(1);
+    expect(pressNote).toHaveBeenCalledTimes(1);
+
+    cleanup();
+  });
+
+  it('calls preventDefault on BracketLeft (F#4, 66) on both initial press and repeat', () => {
+    const { onKeyDown, pressNote, cleanup } = setupBindings();
+
+    const prevent1 = vi.fn();
+    onKeyDown({ code: 'BracketLeft', repeat: false, ctrlKey: false, metaKey: false, altKey: false, shiftKey: false, target: null, preventDefault: prevent1, stopPropagation: vi.fn() });
+    expect(prevent1).toHaveBeenCalledTimes(1);
+    expect(pressNote).toHaveBeenCalledWith(66, 'qwerty', 0.8);
+
+    const prevent2 = vi.fn();
+    onKeyDown({ code: 'BracketLeft', repeat: true, ctrlKey: false, metaKey: false, altKey: false, shiftKey: false, target: null, preventDefault: prevent2, stopPropagation: vi.fn() });
+    expect(prevent2).toHaveBeenCalledTimes(1);
     expect(pressNote).toHaveBeenCalledTimes(1);
 
     cleanup();

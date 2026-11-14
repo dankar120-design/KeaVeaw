@@ -4,16 +4,16 @@
 The codebase enforces strict unidirectional dependency layers with a hard **150-line cap** per `src/**/*.{ts,tsx}` file:
 
 1. **Contracts & Pure Utilities (`src/types/`, `src/utils/`):**
-   - `midi.ts`: Immutable TypeScript interfaces and hardware constants (`MIDI_MIN = 53`, `MIDI_MAX = 84`).
+   - `midi.ts`: Immutable TypeScript interfaces and hardware constants (`MIDI_MIN = 48`, `MIDI_MAX = 79`).
    - `musicTheory.ts`: Deterministic note naming, chord pitch-class lookup, interval labeling, and shared 32-key X-coordinate geometry for Canvas/DOM alignment.
-   - `qwertyMap.ts`: Laptop keyboard mapping (`F3` upward) with key-repeat and modifier guards.
+   - `qwertyMap.ts`: Laptop keyboard mapping (`C3` upward) with key-repeat and modifier guards.
 2. **Real-Time Audio & MIDI Engines (`src/engine/`):**
    - Decoupled from React state to preserve `< 15 ms` audio latency and `60 FPS` timing stability.
    - `AudioEngine.ts` + `sustainBuffer.ts`: Web Audio API polyphonic synthesizer (`latencyHint: 'interactive'`), 24-voice cap, and `AUTO_ROOT` / `LATCH_TOGGLE` / `MOMENTARY` buffer management.
    - `MidiManager.ts`: Pure MIDI frame parser (`parseMidiMessage`) + browser Web MIDI adapter with injectable clock for Node Vitest testing.
    - `Transport.ts`: Deterministic beat clock, discrete edge-triggered `registerNoteOn` Wait-Mode queue, `150 ms` elastic deceleration, snap-to-beat recovery, and scheduled `noteOff` for auto-played accompaniment.
 3. **Song Data (`src/data/`):**
-   - `songHelpers.ts` + 4 modular arrangements under `src/data/songs/`, verified to stay strictly within `MIDI 53..84`.
+   - `songHelpers.ts` + 4 modular arrangements under `src/data/songs/`, verified to stay strictly within `MIDI 48..79`.
 4. **Presentation & Orchestration (`src/components/`, `src/App.tsx`):**
    - `Highway.tsx` (`<canvas>`), `Keyboard.tsx` (32 interactive keys), `Hud.tsx` (controls & status), and `App.tsx` (connects engines, `requestAnimationFrame`, macros, and UI).
 

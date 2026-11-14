@@ -1,4 +1,4 @@
-import { MutableRefObject, useCallback, useEffect, useMemo, useState } from 'react';
+import { MutableRefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AudioEngine } from '../engine/AudioEngine';
 import { AudioState } from '../types/midi';
 import { InputSource } from './practiceEffects';
@@ -30,8 +30,11 @@ export function useAudioStatus(audioRef: MutableRefObject<AudioEngine>) {
   const [audioState, setAudioState] = useState<AudioState>('suspended');
   const [audioPrompt, setAudioPrompt] = useState(false);
   const controller = useMemo(() => createAudioPromptController(setAudioPrompt), []);
+  const prevStateRef = useRef<AudioState>('suspended');
 
   const syncState = useCallback((next: AudioState) => {
+    if (prevStateRef.current === 'running' && next === 'suspended') controller.trigger();
+    prevStateRef.current = next;
     setAudioState(next);
     if (next === 'running') controller.clear();
   }, [controller]);

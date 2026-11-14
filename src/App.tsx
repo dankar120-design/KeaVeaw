@@ -28,6 +28,7 @@ export default function App() {
         onRetryMidi={e.retryMidi}
         onEnableAutoCenter={e.enableAutoCenter}
         onDismissOctaveWarning={e.dismissOctaveWarning}
+        onResetAutoCenter={e.resetAutoCenter}
       />
 
       <Highway
@@ -49,7 +50,7 @@ export default function App() {
       />
 
       <footer className="flex shrink-0 flex-wrap items-center justify-between gap-x-4 gap-y-0.5 border-t border-slate-800 bg-gray-950 px-4 py-1 text-[11px] text-slate-400">
-        <span>Keystation Mini 32 MK3 · F3–C6</span>
+        <span>Keystation Mini 32 MK3 · C3–G5</span>
         <span>
           Space: Spela/Pausa · Z/X: Oktav ({e.octaveShift >= 0 ? `+${e.octaveShift / 12}` : e.octaveShift / 12}) · Shift+←/→: Takt
         </span>

@@ -2,20 +2,20 @@ import { describe, it, expect } from 'vitest';
 import { SustainBuffer } from '../sustainBuffer';
 
 describe('SustainBuffer', () => {
-  it('preserves F3 sustain when playing C4 in free-play AUTO_ROOT, clears on G3', () => {
+  it('preserves C3 sustain when playing C4 in free-play AUTO_ROOT, clears on E3', () => {
     const buf = new SustainBuffer();
-    expect(buf.onNoteOn(53, false)).toEqual([]); // F3
-    expect(buf.onNoteOff(53)).toBe(false); // sustained
-    expect(buf.getSustainedOnly()).toEqual([53]);
+    expect(buf.onNoteOn(48, false)).toEqual([]); // C3
+    expect(buf.onNoteOff(48)).toBe(false); // sustained
+    expect(buf.getSustainedOnly()).toEqual([48]);
 
-    // C4 (60) is outside 53..59 -> must NOT clear F3
+    // C4 (60) is outside 48..59 -> must NOT clear C3
     expect(buf.onNoteOn(60, false)).toEqual([]);
     expect(buf.onNoteOff(60)).toBe(false);
-    expect(buf.getSustainedOnly()).toEqual([53, 60]);
+    expect(buf.getSustainedOnly()).toEqual([48, 60]);
 
-    // G3 (55) is in 53..59 with new pitch class -> clears F3 & C4
-    const released = buf.onNoteOn(55, false);
-    expect(released.sort()).toEqual([53, 60]);
+    // E3 (52) is in 48..59 with new pitch class -> clears C3 & C4
+    const released = buf.onNoteOn(52, false);
+    expect(released.sort()).toEqual([48, 60]);
     expect(buf.getSustainedOnly()).toEqual([]);
   });
 

@@ -94,14 +94,29 @@ export function bindPracticeInputs(d: InputBindingsDeps): () => void {
     d.syncVisualNotes();
   };
 
+  const onFocus = () => { void d.midi.ensureConnected?.(); };
+  const onVisibility = () => {
+    if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+      void d.midi.ensureConnected?.();
+    }
+  };
+
   window.addEventListener('keydown', onKeyDown, true);
   window.addEventListener('keyup', onKeyUp, true);
   window.addEventListener('blur', onBlur);
+  window.addEventListener('focus', onFocus);
+  if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+    document.addEventListener('visibilitychange', onVisibility);
+  }
 
   return () => {
     window.removeEventListener('keydown', onKeyDown, true);
     window.removeEventListener('keyup', onKeyUp, true);
     window.removeEventListener('blur', onBlur);
+    window.removeEventListener('focus', onFocus);
+    if (typeof document !== 'undefined' && typeof document.removeEventListener === 'function') {
+      document.removeEventListener('visibilitychange', onVisibility);
+    }
     unsubEvent();
     unsubStatus();
     d.midi.disconnect();

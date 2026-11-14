@@ -33,23 +33,23 @@ describe('QWERTY input mapping & KeyZ/KeyX guards (P3-3)', () => {
     ).toBe(false);
   });
 
-  it('keeps mapped notes inside 53..84 and flushes held keys on KeyZ/KeyX octave shifts', () => {
-    expect(mapCodeToMidi('KeyA', 0)).toBe(53); // F3
-    expect(mapCodeToMidi('KeyG', 24)).toBe(84); // C6
-    expect(mapCodeToMidi('KeyL', 24)).toBeNull(); // G6 (> 84) -> rejected
-    expect(mapCodeToMidi('KeyQ', 0)).toBeNull(); // intentionally unmapped
-    expect(mapCodeToMidi('BracketLeft', 0)).toBe(70); // A#4
+  it('keeps mapped notes inside 48..79 and flushes held keys on KeyZ/KeyX octave shifts', () => {
+    expect(mapCodeToMidi('KeyA', 0)).toBe(48); // C3
+    expect(mapCodeToMidi('KeyG', 24)).toBe(79); // G5
+    expect(mapCodeToMidi('KeyH', 24)).toBeNull(); // A5 (> 79) -> rejected
+    expect(mapCodeToMidi('KeyR', 0)).toBeNull(); // unmapped gap between E3 and F3
+    expect(mapCodeToMidi('BracketLeft', 0)).toBe(66); // F#4
 
     expect(getOctaveDeltaFromCode('KeyZ')).toBe(-12);
     expect(getOctaveDeltaFromCode('KeyX')).toBe(12);
     expect(getOctaveDeltaFromCode('BracketRight')).toBe(0);
 
-    const held = new Map<string, number>([['KeyA', 53], ['KeyG', 60]]);
+    const held = new Map<string, number>([['KeyA', 48], ['KeyK', 60]]);
     const released: number[] = [];
     const onRelease = vi.fn((m: number) => released.push(m));
 
     expect(applyOctaveShift(0, 12, held, onRelease)).toBe(12);
-    expect(released).toEqual([53, 60]);
+    expect(released).toEqual([48, 60]);
     expect(held.size).toBe(0);
     expect(applyOctaveShift(24, 12, held, onRelease)).toBe(24);
     expect(applyOctaveShift(0, -12, held, onRelease)).toBe(0);

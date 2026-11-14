@@ -30,12 +30,12 @@ export class SustainBuffer {
     return this.releaseNonHeld();
   }
 
-  // INVARIANT: Free-play AUTO_ROOT clears only on F3-B3 (53..59) so C4-E4 arpeggios do not clip bass roots.
+  // INVARIANT: Free-play AUTO_ROOT clears only on C3-B3 (48..59) so C4-E4 arpeggios do not clip bass roots.
   onNoteOn(midi: number, isSongMode: boolean): number[] {
     this.sustainedKeys.delete(midi);
     this.heldKeys.add(midi);
 
-    if (this.mode === 'AUTO_ROOT' && !isSongMode && midi >= 53 && midi <= 59) {
+    if (this.mode === 'AUTO_ROOT' && !isSongMode && midi >= 48 && midi <= 59) {
       const pc = ((midi % 12) + 12) % 12;
       if (this.lastBassPc !== null && this.lastBassPc !== pc) {
         this.lastBassPc = pc;

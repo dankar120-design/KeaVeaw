@@ -80,7 +80,9 @@ export function usePracticeEngine() {
       commitSnapshot(transportRef.current.setPlaying(true), true);
     }
     transportRef.current.registerNoteOn(midi);
-    if (holdsRef.current.press(midi, src)) audioRef.current.noteOn(midi, velocity, playingRef.current);
+    const wasMidiHeld = src === 'midi' && holdsRef.current.hasSource(midi, 'midi');
+    const isFirstHold = holdsRef.current.press(midi, src);
+    if (isFirstHold || wasMidiHeld) audioRef.current.noteOn(midi, velocity, playingRef.current);
     syncVisualNotes();
   }, [unlockAudio, notifyMidiBlocked, commitSnapshot, syncVisualNotes]);
 
@@ -90,7 +92,7 @@ export function usePracticeEngine() {
   }, [syncVisualNotes]);
 
   const controlDeps = useMemo(() => ({
-    audioRef, midiRef, transportRef, playingRef, handRef, setSong, setPlaying, setBpm,
+    audioRef, midiRef, transportRef, playingRef, handRef, holdsRef, setSong, setPlaying, setBpm,
     setHandIsolation, setSustainMode, unlockAudio, commitSnapshot, syncVisualNotes,
   }), [unlockAudio, commitSnapshot, syncVisualNotes]);
   const controls = usePracticeControls(controlDeps);
@@ -139,5 +141,6 @@ export function usePracticeEngine() {
     releasePointer: (m: number) => releaseNote(m, 'pointer'),
     enableAutoCenter: () => midiRef.current.setAutoCenterOctave(true),
     dismissOctaveWarning: () => midiRef.current.clearOctaveWarning(),
+    resetAutoCenter: () => midiRef.current.resetAutoCenter(),
   };
 }

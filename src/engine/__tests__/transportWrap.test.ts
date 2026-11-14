@@ -94,9 +94,9 @@ describe('MidiManager race guard & MidiFrameParser noteOff stability', () => {
     expect(parser.getDetectedOffset()).toBe(0);
 
     const onEv = parser.parse(new Uint8Array([0x90, 40, 100]))[0];
-    expect(onEv).toMatchObject({ type: 'noteOn', midi: 53 });
+    expect(onEv).toMatchObject({ type: 'noteOn', midi: 48 });
     parser.setAutoCenter(true);
     const offEv = parser.parse(new Uint8Array([0x80, 40, 0]))[0];
-    expect(offEv).toMatchObject({ type: 'noteOff', midi: 53 });
+    expect(offEv).toMatchObject({ type: 'noteOff', midi: 48 });
   });
 });

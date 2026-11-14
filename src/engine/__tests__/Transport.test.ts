@@ -15,7 +15,7 @@ function makeSong(notes: Song['notes'], bpm = 120): Song {
 }
 
 describe('Built-in SONGS dataset invariant (V2)', () => {
-  it('contains 4 songs with every note strictly inside MIDI 53..84', () => {
+  it('contains 4 songs with every note strictly inside MIDI 48..79', () => {
     expect(SONGS.length).toBe(4);
     for (const song of SONGS) {
       expect(song.notes.length).toBeGreaterThan(16);

@@ -1,25 +1,25 @@
 import { MIDI_MAX, MIDI_MIN } from '../types/midi';
 
 const BASE_CODE_TO_MIDI: Record<string, number> = {
-  KeyA: 53, // F3
-  KeyW: 54, // F#3
-  KeyS: 55, // G3
-  KeyE: 56, // G#3
-  KeyD: 57, // A3
-  KeyR: 58, // A#3
-  KeyF: 59, // B3
-  KeyG: 60, // C4
-  KeyY: 61, // C#4
-  KeyH: 62, // D4
-  KeyU: 63, // D#4
-  KeyJ: 64, // E4
-  KeyK: 65, // F4
-  KeyO: 66, // F#4
-  KeyL: 67, // G4
-  KeyP: 68, // G#4
-  Semicolon: 69, // A4
-  BracketLeft: 70, // A#4
-  Quote: 71, // B4
+  KeyA: 48, // C3
+  KeyW: 49, // C#3
+  KeyS: 50, // D3
+  KeyE: 51, // D#3
+  KeyD: 52, // E3
+  KeyF: 53, // F3
+  KeyT: 54, // F#3
+  KeyG: 55, // G3
+  KeyY: 56, // G#3
+  KeyH: 57, // A3
+  KeyU: 58, // A#3
+  KeyJ: 59, // B3
+  KeyK: 60, // C4
+  KeyO: 61, // C#4
+  KeyL: 62, // D4
+  KeyP: 63, // D#4
+  Semicolon: 64, // E4
+  Quote: 65, // F4
+  BracketLeft: 66, // F#4
 };
 
 const BLOCKED_TAGS = new Set(['INPUT', 'SELECT', 'TEXTAREA', 'OPTION']);

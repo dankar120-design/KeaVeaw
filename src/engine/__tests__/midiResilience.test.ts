@@ -128,16 +128,17 @@ describe('MIDI resilience & edge recovery (#midi-resilience)', () => {
     mgr.disconnect();
   });
 
-  it('f) MidiFrameParser ignores stale offset when returning to Octave 0 before setAutoCenter(true)', () => {
+  it('f) MidiFrameParser keeps offset over flush when autoCenter is on and clears incompatible span', () => {
     const p1 = new MidiFrameParser();
-    p1.parse(new Uint8Array([0x90, 84, 100])); // Octave +1 note
-    p1.parse(new Uint8Array([0x90, 60, 100])); // Octave 0 note
+    p1.parse(new Uint8Array([0x90, 91, 100])); // Octave +1 note
+    p1.parse(new Uint8Array([0x90, 60, 100])); // Compatible with Octave +1 (60..91)
     p1.setAutoCenter(true);
-    expect(p1.getActiveCenterOffset()).toBe(0);
+    expect(p1.getActiveCenterOffset()).toBe(-12);
 
     const p2 = new MidiFrameParser();
-    p2.parse(new Uint8Array([0x90, 84, 100]));
+    p2.parse(new Uint8Array([0x90, 91, 100])); // Octave +1 (-12)
+    p2.parse(new Uint8Array([0x90, 48, 100])); // Physically impossible on Octave +1 -> clears stale -12
     p2.setAutoCenter(true);
-    expect(p2.getActiveCenterOffset()).toBe(-12);
+    expect(p2.getActiveCenterOffset()).toBe(0);
   });
 });

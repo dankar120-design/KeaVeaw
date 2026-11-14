@@ -40,11 +40,13 @@ export class MidiManager {
     this.status.autoCenterOctave = val;
     this.parser.setAutoCenter(val);
     if (val) this.parser.clearDetectedOffset();
+    this.emitEvents(this.parser.rebalanceHeldNotes());
     this.notifyStatus();
   }
 
   resetAutoCenter(): void {
-    this.parser.clearCenterOffset();
+    this.parser.clearDetectedOffset();
+    this.emitEvents(this.parser.clearCenterOffset());
     this.notifyStatus();
   }
 

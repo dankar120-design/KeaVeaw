@@ -83,6 +83,19 @@ describe('bindPracticeInputs preventDefault & modifier guards (#1)', () => {
     cleanup();
   });
 
+  it('calls preventDefault on BracketRight (G4, 67) on both initial press and repeat', () => {
+    const { onKeyDown, pressNote, cleanup } = setupBindings();
+    const p1 = vi.fn();
+    onKeyDown({ code: 'BracketRight', repeat: false, ctrlKey: false, metaKey: false, altKey: false, shiftKey: false, target: null, preventDefault: p1, stopPropagation: vi.fn() });
+    expect(p1).toHaveBeenCalledTimes(1);
+    expect(pressNote).toHaveBeenCalledWith(67, 'qwerty', 0.8);
+    const p2 = vi.fn();
+    onKeyDown({ code: 'BracketRight', repeat: true, ctrlKey: false, metaKey: false, altKey: false, shiftKey: false, target: null, preventDefault: p2, stopPropagation: vi.fn() });
+    expect(p2).toHaveBeenCalledTimes(1);
+    expect(pressNote).toHaveBeenCalledTimes(1);
+    cleanup();
+  });
+
   it('blurs header buttons on Space while preserving Tab focus on piano keys (#3)', () => {
     class FakeButton {
       private inHeader: boolean;

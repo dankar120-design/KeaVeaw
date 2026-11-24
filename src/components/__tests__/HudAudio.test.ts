@@ -109,4 +109,27 @@ describe('Hud audio state & MIDI prompt (#6)', () => {
     expect(html).toMatch(/<button[^>]*aria-pressed="false"[^>]*>Lyssna<\/button>/);
     expect(demoHtml).toMatch(/<button[^>]*aria-pressed="true"[^>]*>Sluta lyssna<\/button>/);
   });
+
+  it('assigns unique non-empty id and name attributes to all 4 Hud <select> controls (#14)', () => {
+    const html = renderToStaticMarkup(createElement(Hud, makeProps({ synthPreset: 'epiano' })));
+    const selects = html.match(/<select\b[^>]*>/g) ?? [];
+    expect(selects).toHaveLength(4);
+    const expected = [
+      ['Välj låt', 'song-select', 'song'],
+      ['Handisolering', 'hand-isolation-select', 'handIsolation'],
+      ['Sustainläge', 'sustain-mode-select', 'sustainMode'],
+      ['Klang', 'synth-preset-select', 'synthPreset'],
+    ];
+    const ids = new Set<string>();
+    const names = new Set<string>();
+    for (const [label, id, name] of expected) {
+      const tag = selects.find((s) => s.includes(`aria-label="${label}"`)) ?? '';
+      expect(tag).toContain(`id="${id}"`);
+      expect(tag).toContain(`name="${name}"`);
+      ids.add(id);
+      names.add(name);
+    }
+    expect(ids.size).toBe(4);
+    expect(names.size).toBe(4);
+  });
 });

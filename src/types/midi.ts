@@ -2,6 +2,7 @@ export const MIDI_MIN = 48; // C3
 export const MIDI_MAX = 79; // G5
 
 export type Hand = 'L' | 'R';
+export type InputSource = 'midi' | 'qwerty' | 'pointer';
 export type HandIsolation = 'BOTH' | 'RIGHT_ONLY' | 'LEFT_ONLY' | 'DEMO';
 export type SustainMode = 'AUTO_ROOT' | 'LATCH_TOGGLE' | 'MOMENTARY';
 export type SynthPreset = 'epiano' | 'bell' | 'warm_pad';

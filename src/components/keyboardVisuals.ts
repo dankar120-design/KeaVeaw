@@ -65,11 +65,11 @@ export function getKeyVisuals(k: KeyLayout, s: KeyVisualState): KeyVisuals {
       ? (s.waiting.hand === 'R' ? 'bg-slate-950 text-cyan-300' : 'bg-slate-950 text-amber-300')
       : (s.waiting.hand === 'R' ? 'bg-cyan-400 text-slate-950' : 'bg-amber-400 text-slate-950');
     const padSize = k.isBlack
-      ? 'px-0.5 py-0.5 text-[9px]'
-      : 'w-[calc(100%-6px)] py-0.5 text-center text-[10px]';
+      ? 'max-w-[calc(100%-2px)] px-0.5 py-0.5 text-[8px] sm:text-[9px]'
+      : 'w-[calc(100%-4px)] sm:w-[calc(100%-6px)] py-0.5 text-center text-[8px] sm:text-[10px]';
     waitingPad = {
       label,
-      className: `pointer-events-none mb-1 whitespace-nowrap rounded font-bold leading-none shadow-sm ${padColors} ${padSize}`,
+      className: `pointer-events-none mb-1 overflow-hidden whitespace-nowrap rounded font-bold leading-none shadow-sm ${padColors} ${padSize}`,
     };
   }
 

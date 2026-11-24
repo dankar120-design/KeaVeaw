@@ -83,7 +83,7 @@ export function usePracticeEngine() {
       setPlaying(true);
       commitSnapshot(transportRef.current.setPlaying(true), true);
     }
-    if (!isRebalance) transportRef.current.registerNoteOn(midi);
+    if (!isRebalance) transportRef.current.registerNoteOn(midi, undefined, src);
     const wasMidiHeld = src === 'midi' && holdsRef.current.hasSource(midi, 'midi');
     const isFirstHold = holdsRef.current.press(midi, src);
     if (isFirstHold || wasMidiHeld) audioRef.current.noteOn(midi, velocity, playingRef.current);
@@ -91,7 +91,7 @@ export function usePracticeEngine() {
   }, [unlockAudio, notifyMidiBlocked, commitSnapshot, syncVisualNotes]);
 
   const releaseNote = useCallback((midi: number, src: InputSource) => {
-    if (holdsRef.current.release(midi, src)) { transportRef.current.registerNoteOff(midi); audioRef.current.noteOff(midi); }
+    if (holdsRef.current.release(midi, src)) { transportRef.current.registerNoteOff(midi, undefined, src); audioRef.current.noteOff(midi); }
     syncVisualNotes();
   }, [syncVisualNotes]);
 

@@ -1,8 +1,8 @@
-import { HandIsolation, Song, SongNote, TransportSnapshot } from '../types/midi';
+import { HandIsolation, InputSource, Song, SongNote, TransportSnapshot } from '../types/midi';
 import {
   ActiveAutoVoice, BeatGroup, buildBeatGroups, collectAutoEvents, findActiveChord, findPendingGroup, getSongEndBeat,
 } from './transportHelpers';
-import { consumeHits, createWaitState, updateFreezeState, WaitState } from './waitMode';
+import { clearPartialMatch, consumeHits, createWaitState, updateFreezeState, WaitState } from './waitMode';
 
 export class Transport {
   private song: Song;
@@ -40,7 +40,7 @@ export class Transport {
     this.handIsolation = mode;
     const canceledOffs = this.activeAuto.map((v) => v.midi);
     this.activeAuto = [];
-    this.ws.hitQueue = []; this.ws.matchedInPending.clear(); this.ws.firstChordHitMs = null; this.ws.completedGroups.clear(); this.triggeredAutoGroups.clear();
+    this.ws.hitQueue = []; clearPartialMatch(this.ws); this.ws.completedGroups.clear(); this.triggeredAutoGroups.clear();
     for (let i = 0; i < this.groups.length; i++) {
       const b = this.groups[i].beat;
       if (b < this.beat - 1e-4) { this.ws.completedGroups.add(i); this.triggeredAutoGroups.add(i); }
@@ -58,7 +58,7 @@ export class Transport {
 
   setPlaying(playing: boolean): TransportSnapshot {
     this.playing = playing;
-    if (!playing) { this.activeAuto = []; this.ws.hitQueue = []; this.ws.matchedInPending.clear(); this.ws.firstChordHitMs = null; }
+    if (!playing) { this.activeAuto = []; this.ws.hitQueue = []; clearPartialMatch(this.ws); }
     return this.snapshot([], [], false, !playing);
   }
 
@@ -82,13 +82,13 @@ export class Transport {
   }
 
   // INVARIANT: Wait-Mode matches discrete NoteOn hits (edge-triggered), never held keys.
-  registerNoteOn(midi: number, timeMs?: number): void {
-    if (!this.playing) return;
-    this.ws.hitQueue.push({ type: 'on', midi, timeMs: timeMs ?? this.now() });
+  registerNoteOn(midi: number, timeMs?: number, source?: InputSource): void {
+    if (!this.playing || this.handIsolation === 'DEMO') return;
+    this.ws.hitQueue.push({ type: 'on', midi, timeMs: timeMs ?? this.now(), source });
   }
-  registerNoteOff(midi: number, timeMs?: number): void {
-    if (!this.playing) return;
-    this.ws.hitQueue.push({ type: 'off', midi, timeMs: timeMs ?? this.now() });
+  registerNoteOff(midi: number, timeMs?: number, source?: InputSource): void {
+    if (!this.playing || this.handIsolation === 'DEMO') return;
+    this.ws.hitQueue.push({ type: 'off', midi, timeMs: timeMs ?? this.now(), source });
   }
 
   step(rawDtMs: number): TransportSnapshot {

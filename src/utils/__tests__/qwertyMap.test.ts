@@ -45,6 +45,9 @@ describe('QWERTY input mapping & KeyZ/KeyX guards (P3-3)', () => {
     expect(mapCodeToMidi('KeyH', 24)).toBeNull();
     expect(mapCodeToMidi('KeyR', 0)).toBeNull();
     expect(mapCodeToMidi('BracketLeft', 0)).toBe(66);
+    expect(mapCodeToMidi('BracketRight', 0)).toBe(67);
+    expect(mapCodeToMidi('BracketRight', 12)).toBe(79);
+    expect(mapCodeToMidi('Backslash', 0)).toBeNull();
 
     expect(getOctaveDeltaFromCode('KeyZ')).toBe(-12);
     expect(getOctaveDeltaFromCode('KeyX')).toBe(12);
@@ -71,7 +74,8 @@ describe('getQwertyLabelMap (P3-3 / Keyboard QWERTY hints)', () => {
     expect(map0[64]).toBe(';');
     expect(map0[65]).toBe("'");
     expect(map0[66]).toBe('[');
-    expect(Object.keys(map0).length).toBe(19);
+    expect(map0[67]).toBe(']');
+    expect(Object.keys(map0).length).toBe(20);
   });
 
   it('shifts labels by octaveShift and drops out-of-range keys outside 48..79', () => {
@@ -79,6 +83,8 @@ describe('getQwertyLabelMap (P3-3 / Keyboard QWERTY hints)', () => {
     expect(map12[60]).toBe('A');
     expect(map12[72]).toBe('K');
     expect(map12[78]).toBe('[');
+    expect(map12[79]).toBe(']');
+    expect(Object.keys(map12).length).toBe(20);
     expect(map12[48]).toBeUndefined();
 
     const map24 = getQwertyLabelMap(24);

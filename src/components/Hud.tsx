@@ -42,7 +42,7 @@ export function Hud(p: HudProps) {
   return (
     <header className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-gray-800 bg-gray-900 px-3 py-2 text-xs text-gray-100">
       <div className="flex max-w-full flex-wrap items-center gap-1.5">
-        <select aria-label="Välj låt" value={selectedSongId} onChange={(e) => onSelectSong(e.target.value)} className="max-w-full min-w-0 rounded border border-gray-700 bg-gray-800 px-2.5 py-1.5 font-medium text-gray-100">
+        <select id="song-select" name="song" aria-label="Välj låt" value={selectedSongId} onChange={(e) => onSelectSong(e.target.value)} className="max-w-full min-w-0 rounded border border-gray-700 bg-gray-800 px-2.5 py-1.5 font-medium text-gray-100">
           {practiceSongs.length > 0 && <optgroup label="Låtar">{practiceSongs.map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}</optgroup>}
           {repertoireSongs.length > 0 && <optgroup label="Klassiker (C3–G5)">{repertoireSongs.map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}</optgroup>}
           {lessonSongs.length > 0 && <optgroup label="Lektioner (C3–G5)">{lessonSongs.map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}</optgroup>}
@@ -69,20 +69,20 @@ export function Hud(p: HudProps) {
           <button type="button" onClick={() => onChangeBpm(Math.min(180, bpm + 5))} className="px-2 py-1.5 hover:bg-gray-700">+5</button>
         </div>
 
-        <select aria-label="Handisolering" value={handIsolation} onChange={(e) => onChangeHandIsolation(e.target.value as HandIsolation)} className="rounded border border-gray-700 bg-gray-800 px-2 py-1.5">
+        <select id="hand-isolation-select" name="handIsolation" aria-label="Handisolering" value={handIsolation} onChange={(e) => onChangeHandIsolation(e.target.value as HandIsolation)} className="rounded border border-gray-700 bg-gray-800 px-2 py-1.5">
           <option value="BOTH">Båda händer</option>
           <option value="RIGHT_ONLY">Höger (Auto V)</option>
           <option value="LEFT_ONLY">Vänster (Auto H)</option>
           <option value="DEMO">Demo (Lyssna)</option>
         </select>
 
-        <select aria-label="Sustainläge" value={sustainMode} onChange={(e) => onChangeSustainMode(e.target.value as SustainMode)} className="rounded border border-gray-700 bg-gray-800 px-2 py-1.5">
+        <select id="sustain-mode-select" name="sustainMode" aria-label="Sustainläge" value={sustainMode} onChange={(e) => onChangeSustainMode(e.target.value as SustainMode)} className="rounded border border-gray-700 bg-gray-800 px-2 py-1.5">
           <option value="AUTO_ROOT">Auto Root</option>
           <option value="LATCH_TOGGLE">Latch Pedal</option>
           <option value="MOMENTARY">Momentary</option>
         </select>
 
-        <select aria-label="Klang" value={synthPreset} onChange={(e) => onChangeSynthPreset?.(e.target.value as SynthPreset)} className="rounded border border-gray-700 bg-gray-800 px-2 py-1.5">
+        <select id="synth-preset-select" name="synthPreset" aria-label="Klang" value={synthPreset} onChange={(e) => onChangeSynthPreset?.(e.target.value as SynthPreset)} className="rounded border border-gray-700 bg-gray-800 px-2 py-1.5">
           <option value="epiano">EPiano</option>
           <option value="bell">Bell</option>
           <option value="warm_pad">Warm Pad</option>

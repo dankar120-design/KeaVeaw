@@ -1,10 +1,12 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { SONGS } from '../../data/songs';
 import { MIDI_MAX, MIDI_MIN } from '../../types/midi';
 import { KEY_LAYOUTS, WHITE_KEY_COUNT } from '../../utils/musicTheory';
+import { MidiManager } from '../MidiManager';
 import { MidiFrameParser } from '../midiParser';
 
 describe('Keystation 32 hardware range C3–G5 & uniform octave centering (#10)', () => {
+  afterEach(() => { vi.unstubAllGlobals(); });
   it('maps 32 keys from C3 (48) to G5 (79) with 19 white keys', () => {
     expect(MIDI_MIN).toBe(48);
     expect(MIDI_MAX).toBe(79);
@@ -76,6 +78,42 @@ describe('Keystation 32 hardware range C3–G5 & uniform octave centering (#10)'
     expect(p.parse(new Uint8Array([0x80, 60, 0]))[0]).toMatchObject({ type: 'noteOff', midi: 48, rawMidi: 60 });
     expect(p.parse(new Uint8Array([0x80, 91, 0]))[0]).toMatchObject({ type: 'noteOff', midi: 79, rawMidi: 91 });
     expect(p.parse(new Uint8Array([0x80, 64, 0]))[0]).toMatchObject({ type: 'noteOff', midi: 52, rawMidi: 64 });
+  });
+
+  it('detects -24 on Octave +2 chord [72, 84, 103], preserves it across setAutoCenter(true), and rebalances to [48, 60, 79] (#19)', () => {
+    const p = new MidiFrameParser();
+    p.parse(new Uint8Array([0x90, 72, 100]));
+    p.parse(new Uint8Array([0x90, 84, 100]));
+    p.parse(new Uint8Array([0x90, 103, 100]));
+    expect(p.getDetectedOffset()).toBe(-24);
+
+    p.setAutoCenter(true);
+    expect(p.getActiveCenterOffset()).toBe(-24);
+
+    const rebalanced = p.rebalanceHeldNotes();
+    expect(rebalanced).toEqual([
+      { type: 'noteOff', midi: 72, rawMidi: 72 },
+      { type: 'noteOn', midi: 48, velocity: 100 / 127, rawMidi: 72, rebalance: true },
+      { type: 'noteOn', midi: 60, velocity: 100 / 127, rawMidi: 84, rebalance: true },
+    ]);
+    expect(p.parse(new Uint8Array([0x80, 72, 0]))[0]).toMatchObject({ type: 'noteOff', midi: 48, rawMidi: 72 });
+    expect(p.parse(new Uint8Array([0x80, 84, 0]))[0]).toMatchObject({ type: 'noteOff', midi: 60, rawMidi: 84 });
+    expect(p.parse(new Uint8Array([0x80, 103, 0]))[0]).toMatchObject({ type: 'noteOff', midi: 79, rawMidi: 103 });
+  });
+
+  it('updates MidiManager status to activeCenterOffset === -24 and clears warning for Octave +2 (#19)', async () => {
+    const input = { name: 'K32', state: 'connected', onmidimessage: null as ((m: { data: Uint8Array }) => void) | null };
+    vi.stubGlobal('navigator', { requestMIDIAccess: async () => ({ inputs: { values: () => [input].values() }, onstatechange: null }) });
+    const mgr = new MidiManager();
+    await mgr.connect();
+    input.onmidimessage?.({ data: new Uint8Array([0x90, 72, 100]) });
+    input.onmidimessage?.({ data: new Uint8Array([0x90, 84, 100]) });
+    input.onmidimessage?.({ data: new Uint8Array([0x90, 103, 100]) });
+    expect(mgr.getStatus().detectedOctaveOffset).toBe(-24);
+    mgr.setAutoCenterOctave(true);
+    expect(mgr.getStatus().activeCenterOffset).toBe(-24);
+    expect(mgr.getStatus().detectedOctaveOffset).toBe(0);
+    mgr.disconnect();
   });
 
   it('keeps every note of all built-in songs within physical C3–G5 (48..79)', () => {

@@ -20,13 +20,14 @@ const BASE_CODE_TO_MIDI: Record<string, number> = {
   Semicolon: 64, // E4
   Quote: 65, // F4
   BracketLeft: 66, // F#4
+  BracketRight: 67, // G4
 };
 
 const CODE_TO_LABEL: Record<string, string> = {
   KeyA: 'A', KeyW: 'W', KeyS: 'S', KeyE: 'E', KeyD: 'D',
   KeyF: 'F', KeyT: 'T', KeyG: 'G', KeyY: 'Y', KeyH: 'H',
   KeyU: 'U', KeyJ: 'J', KeyK: 'K', KeyO: 'O', KeyL: 'L',
-  KeyP: 'P', Semicolon: ';', Quote: "'", BracketLeft: '[',
+  KeyP: 'P', Semicolon: ';', Quote: "'", BracketLeft: '[', BracketRight: ']',
 };
 
 const BLOCKED_TAGS = new Set(['INPUT', 'SELECT', 'TEXTAREA', 'OPTION']);

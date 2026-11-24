@@ -118,4 +118,24 @@ describe('Keyboard waiting landing pad visuals (#Förslag-A)', () => {
     expect(key64).toContain('>3<');
     expect(key64).toContain('H·F3');
   });
+
+  it('uses responsive mobile-safe waiting-pad sizing and overflow-hidden without breaking restrike (#17)', () => {
+    const html = renderKb({
+      activeNotes: new Set<number>([60]),
+      waitingNotes: [
+        { beat: 0, duration: 1, midi: 60, hand: 'L', role: 'root', finger: 5 },
+        { beat: 0, duration: 1, midi: 61, hand: 'R', role: 'melody', finger: 3 },
+      ],
+    });
+    const key60 = html.match(/<button[^>]*data-midi="60"[\s\S]*?<\/button>/)?.[0] ?? '';
+    const key61 = html.match(/<button[^>]*data-midi="61"[\s\S]*?<\/button>/)?.[0] ?? '';
+    expect(key60).toContain('overflow-hidden');
+    expect(key60).toContain('whitespace-nowrap');
+    expect(key60).toContain('text-[8px] sm:text-[10px]');
+    expect(key60).toContain('↻ V·F5');
+    expect(key61).toContain('overflow-hidden');
+    expect(key61).toContain('max-w-[calc(100%-2px)]');
+    expect(key61).toContain('whitespace-nowrap');
+    expect(key61).toContain('text-[8px] sm:text-[9px]');
+  });
 });

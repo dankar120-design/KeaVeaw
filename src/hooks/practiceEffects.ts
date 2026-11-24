@@ -1,6 +1,6 @@
-import { HandIsolation, TransportSnapshot } from '../types/midi';
+import { HandIsolation, InputSource, TransportSnapshot } from '../types/midi';
 
-export type InputSource = 'midi' | 'qwerty' | 'pointer';
+export type { InputSource };
 
 export interface AudioEffectSink {
   noteOn(midi: number, velocity?: number, isSongMode?: boolean): void;

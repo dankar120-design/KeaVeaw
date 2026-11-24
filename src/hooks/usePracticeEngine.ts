@@ -9,14 +9,10 @@ import { bindPracticeInputs } from './inputBindings';
 import { useAudioStatus } from './useAudioStatus';
 import { usePracticeControls } from './usePracticeControls';
 import { usePracticePrefs } from './usePracticePrefs';
+import { detectChordName, shouldPreferFlats } from '../utils/chordDetect';
 import {
-  applyTransportEffects,
-  buildSnapshotDiffKey,
-  combineActiveNotes,
-  InputSource,
-  MultiSourceHoldTracker,
-  setsEqual,
-  shouldAutoStartOnPress,
+  applyTransportEffects, buildSnapshotDiffKey, combineActiveNotes, InputSource,
+  MultiSourceHoldTracker, setsEqual, shouldAutoStartOnPress,
 } from './practiceEffects';
 
 export function usePracticeEngine() {
@@ -35,12 +31,10 @@ export function usePracticeEngine() {
   const [octaveShift, setOctaveShift] = useState(0);
   const [activeNotes, setActiveNotes] = useState<Set<number>>(() => new Set());
   const [sustainedNotes, setSustainedNotes] = useState<Set<number>>(() => new Set());
+  const [playedChord, setPlayedChord] = useState<string | null>(null);
 
   const snapshotRef = useRef<TransportSnapshot>(transportRef.current.getSnapshot());
-  const [uiSnap, setUiSnap] = useState(() => ({
-    waitingNotes: snapshotRef.current.waitingNotes,
-    activeChord: snapshotRef.current.activeChord,
-  }));
+  const [uiSnap, setUiSnap] = useState(() => ({ waitingNotes: snapshotRef.current.waitingNotes, activeChord: snapshotRef.current.activeChord }));
 
   const holdsRef = useRef(new MultiSourceHoldTracker());
   const autoActiveRef = useRef(new Set<number>());
@@ -51,12 +45,21 @@ export function usePracticeEngine() {
   const diffKeyRef = useRef('');
   const activeRef = useRef(activeNotes);
   const sustainedRef = useRef(sustainedNotes);
+  const playedChordRef = useRef<string | null>(null);
+  const chordKeyRef = useRef('');
 
   const syncVisualNotes = useCallback(() => {
     const nextActive = combineActiveNotes(holdsRef.current, autoActiveRef.current);
     if (!setsEqual(nextActive, activeRef.current)) { activeRef.current = nextActive; setActiveNotes(nextActive); }
     const nextSustained = new Set(audioRef.current.getSustainedNotes());
     if (!setsEqual(nextSustained, sustainedRef.current)) { sustainedRef.current = nextSustained; setSustainedNotes(nextSustained); }
+    const preferFlats = shouldPreferFlats(snapshotRef.current.activeChord?.symbol);
+    const chordKey = `${holdsRef.current.getVersion()}|${preferFlats ? 1 : 0}`;
+    if (chordKey !== chordKeyRef.current) {
+      chordKeyRef.current = chordKey;
+      const next = detectChordName(holdsRef.current.getActiveMidis(), preferFlats);
+      if (next !== playedChordRef.current) { playedChordRef.current = next; setPlayedChord(next); }
+    }
   }, []);
 
   const commitSnapshot = useCallback((snap: TransportSnapshot, preserveUserHeld: boolean) => {
@@ -88,7 +91,7 @@ export function usePracticeEngine() {
   }, [unlockAudio, notifyMidiBlocked, commitSnapshot, syncVisualNotes]);
 
   const releaseNote = useCallback((midi: number, src: InputSource) => {
-    if (holdsRef.current.release(midi, src)) audioRef.current.noteOff(midi);
+    if (holdsRef.current.release(midi, src)) { transportRef.current.registerNoteOff(midi); audioRef.current.noteOff(midi); }
     syncVisualNotes();
   }, [syncVisualNotes]);
 
@@ -123,10 +126,7 @@ export function usePracticeEngine() {
       setMidiStatus, setOctaveShift, pressNote, releaseNote, syncVisualNotes,
       togglePlay: controls.togglePlay, resetLoop: controls.resetLoop, cycleHand: controls.cycleHand, commitSnapshot,
     });
-    return () => {
-      audio.setOnVoiceChange(null);
-      unbind();
-    };
+    return () => { audio.setOnVoiceChange(null); unbind(); };
   }, [pressNote, releaseNote, controls.togglePlay, controls.resetLoop, controls.cycleHand, commitSnapshot, syncVisualNotes]);
 
   const getPlaybackState = useCallback((): HighwayPlaybackState => ({
@@ -137,7 +137,7 @@ export function usePracticeEngine() {
 
   return {
     songs: SONGS, song, playing, bpm, handIsolation, sustainMode, audioState, audioPrompt, midiStatus, octaveShift,
-    activeNotes, sustainedNotes, waitingNotes: uiSnap.waitingNotes, activeChord: uiSnap.activeChord,
+    activeNotes, sustainedNotes, playedChord, waitingNotes: uiSnap.waitingNotes, activeChord: uiSnap.activeChord,
     drawRef, getPlaybackState, ...controls, ...prefs, unlockAudio,
     pressPointer: (m: number) => pressNote(m, 'pointer', 0.85),
     releasePointer: (m: number) => releaseNote(m, 'pointer'),

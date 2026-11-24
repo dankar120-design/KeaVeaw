@@ -7,6 +7,7 @@ export interface HudProps {
   onSelectSong: (songId: string) => void;
   playing: boolean;
   onTogglePlay: () => void;
+  onToggleDemoPlay?: () => void;
   onResetLoop: () => void;
   bpm: number;
   onChangeBpm: (nextBpm: number) => void;
@@ -29,24 +30,35 @@ export interface HudProps {
 }
 
 export function Hud(p: HudProps) {
-  const { songs, selectedSongId, onSelectSong, playing, onTogglePlay, onResetLoop, bpm, onChangeBpm } = p;
+  const { songs, selectedSongId, onSelectSong, playing, onTogglePlay, onToggleDemoPlay, onResetLoop, bpm, onChangeBpm } = p;
   const { handIsolation, onChangeHandIsolation, sustainMode, onChangeSustainMode } = p;
   const { synthPreset = 'epiano', onChangeSynthPreset, showQwertyHints = false, onToggleQwertyHints } = p;
   const { audioState, audioPrompt = false, onUnlockAudio, midiStatus, onRetryMidi } = p;
   const { onEnableAutoCenter, onDismissOctaveWarning, onResetAutoCenter } = p;
-  const classicSongs = songs.filter((s) => !s.id.startsWith('lesson-'));
+  const practiceSongs = songs.filter((s) => !s.id.startsWith('classic-') && !s.id.startsWith('lesson-'));
+  const repertoireSongs = songs.filter((s) => s.id.startsWith('classic-'));
   const lessonSongs = songs.filter((s) => s.id.startsWith('lesson-'));
 
   return (
     <header className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-gray-800 bg-gray-900 px-3 py-2 text-xs text-gray-100">
       <div className="flex max-w-full flex-wrap items-center gap-1.5">
         <select aria-label="Välj låt" value={selectedSongId} onChange={(e) => onSelectSong(e.target.value)} className="max-w-full min-w-0 rounded border border-gray-700 bg-gray-800 px-2.5 py-1.5 font-medium text-gray-100">
-          {classicSongs.length > 0 && <optgroup label="Låtar">{classicSongs.map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}</optgroup>}
+          {practiceSongs.length > 0 && <optgroup label="Låtar">{practiceSongs.map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}</optgroup>}
+          {repertoireSongs.length > 0 && <optgroup label="Klassiker (C3–G5)">{repertoireSongs.map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}</optgroup>}
           {lessonSongs.length > 0 && <optgroup label="Lektioner (C3–G5)">{lessonSongs.map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}</optgroup>}
         </select>
 
         <button type="button" onClick={onTogglePlay} className={`rounded px-3 py-1.5 font-semibold ${playing ? 'bg-amber-500 text-slate-950' : 'bg-cyan-500 text-slate-950'}`}>
           {playing ? 'Pausa' : 'Spela'}
+        </button>
+
+        <button
+          type="button"
+          aria-pressed={handIsolation === 'DEMO'}
+          onClick={onToggleDemoPlay}
+          className={`rounded border px-2.5 py-1.5 font-semibold ${handIsolation === 'DEMO' ? 'border-emerald-400 bg-emerald-950/70 text-emerald-200' : 'border-gray-700 bg-gray-800 text-gray-200 hover:bg-gray-700'}`}
+        >
+          {handIsolation === 'DEMO' ? 'Sluta lyssna' : 'Lyssna'}
         </button>
 
         <button type="button" onClick={onResetLoop} className="rounded border border-gray-700 bg-gray-800 px-2.5 py-1.5 hover:bg-gray-700">Börja om</button>

@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { SONGS, CLASSIC_SONGS, LESSON_SONGS } from '../index';
+import { SONGS, CLASSIC_SONGS, REPERTOIRE_SONGS, LESSON_SONGS } from '../index';
 import { cinematicPulse } from '../cinematicPulse';
+import { classicBachPreludeC } from '../classicBachPreludeC';
+import { classicFurElise } from '../classicFurElise';
 import { chordRootPitchClass, intervalLabel } from '../../../utils/musicTheory';
 import { MIDI_MAX, MIDI_MIN } from '../../../types/midi';
 
@@ -30,8 +32,12 @@ describe('Built-in songs chord rootMidi integrity (#7)', () => {
     }
   });
 
-  it('has unique song ids across all SONGS', () => {
-    expect(SONGS.length).toBe(CLASSIC_SONGS.length + LESSON_SONGS.length);
+  it('has unique song ids across all SONGS and at least 4 classical repertoire pieces', () => {
+    expect(REPERTOIRE_SONGS.length).toBeGreaterThanOrEqual(4);
+    for (const song of REPERTOIRE_SONGS) {
+      expect(song.id.startsWith('classic-'), `${song.id} should start with classic-`).toBe(true);
+    }
+    expect(SONGS.length).toBe(CLASSIC_SONGS.length + REPERTOIRE_SONGS.length + LESSON_SONGS.length);
     const ids = SONGS.map((s) => s.id);
     expect(new Set(ids).size).toBe(ids.length);
   });
@@ -61,18 +67,18 @@ describe('Built-in songs chord rootMidi integrity (#7)', () => {
     }
   });
 
-  it('ensures no right-hand lesson note has sustainClear except possibly at bar start', () => {
-    for (const song of LESSON_SONGS) {
+  it('ensures no right-hand repertoire or lesson note has sustainClear except possibly at bar start', () => {
+    for (const song of [...REPERTOIRE_SONGS, ...LESSON_SONGS]) {
       for (const note of song.notes) {
         if (note.hand === 'R' && note.sustainClear) {
-          expect(note.beat % 4, `${song.id} RH note at beat ${note.beat} has sustainClear`).toBe(0);
+          expect(note.beat % song.timeSignature[0], `${song.id} RH note at beat ${note.beat} has sustainClear`).toBe(0);
         }
       }
     }
   });
 
   it('ensures no left-hand and right-hand notes share identical midi with overlapping time', () => {
-    for (const song of LESSON_SONGS) {
+    for (const song of [...REPERTOIRE_SONGS, ...LESSON_SONGS]) {
       const leftNotes = song.notes.filter((n) => n.hand === 'L');
       const rightNotes = song.notes.filter((n) => n.hand === 'R');
 
@@ -92,5 +98,21 @@ describe('Built-in songs chord rootMidi integrity (#7)', () => {
         }
       }
     }
+  });
+
+  it('keeps sustained LH bass notes (duration >= 1.5) in Bach Prelude C', () => {
+    const bachLh = classicBachPreludeC.notes.filter((n) => n.hand === 'L');
+    expect(bachLh.length).toBeGreaterThan(0);
+    for (const note of bachLh) {
+      expect(note.duration, `Bach LH beat ${note.beat}`).toBeGreaterThanOrEqual(1.5);
+    }
+  });
+
+  it('starts Für Elise bar 0 with clean E5-D#5 pickup (first note beat >= 2)', () => {
+    expect(classicFurElise.notes[0].beat).toBeGreaterThanOrEqual(2);
+    expect(classicFurElise.notes.slice(0, 2).map((n) => [n.beat, n.midi])).toEqual([
+      [2, 76],
+      [2.5, 75],
+    ]);
   });
 });

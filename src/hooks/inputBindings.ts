@@ -29,7 +29,7 @@ export function bindPracticeInputs(d: InputBindingsDeps): () => void {
     if (!s.connected) {
       const released = d.holds.releaseSource('midi');
       if (released.length > 0) {
-        for (const m of released) d.audio.noteOff(m);
+        for (const m of released) { d.transport.registerNoteOff?.(m); d.audio.noteOff(m); }
         d.syncVisualNotes();
       }
     }
@@ -90,7 +90,7 @@ export function bindPracticeInputs(d: InputBindingsDeps): () => void {
 
   const onBlur = () => {
     d.heldQwerty.clear();
-    for (const m of [...d.holds.releaseSource('qwerty'), ...d.holds.releaseSource('pointer')]) d.audio.noteOff(m);
+    for (const m of [...d.holds.releaseSource('qwerty'), ...d.holds.releaseSource('pointer')]) { d.transport.registerNoteOff?.(m); d.audio.noteOff(m); }
     d.syncVisualNotes();
   };
 

@@ -40,7 +40,7 @@ export class Transport {
     this.handIsolation = mode;
     const canceledOffs = this.activeAuto.map((v) => v.midi);
     this.activeAuto = [];
-    this.ws.matchedInPending.clear(); this.ws.completedGroups.clear(); this.triggeredAutoGroups.clear();
+    this.ws.hitQueue = []; this.ws.matchedInPending.clear(); this.ws.firstChordHitMs = null; this.ws.completedGroups.clear(); this.triggeredAutoGroups.clear();
     for (let i = 0; i < this.groups.length; i++) {
       const b = this.groups[i].beat;
       if (b < this.beat - 1e-4) { this.ws.completedGroups.add(i); this.triggeredAutoGroups.add(i); }
@@ -48,7 +48,7 @@ export class Transport {
     }
     if (mode === 'DEMO') {
       this.ws.isFrozen = false; this.ws.speedMultiplier = 1;
-      this.ws.missElapsedMs = 0; this.ws.hitQueue = [];
+      this.ws.missElapsedMs = 0;
     }
     const clearSustain = prevMode !== mode && (prevMode === 'DEMO' || canceledOffs.length > 0);
     return this.snapshot([], canceledOffs, clearSustain, false);
@@ -58,7 +58,7 @@ export class Transport {
 
   setPlaying(playing: boolean): TransportSnapshot {
     this.playing = playing;
-    if (!playing) this.activeAuto = [];
+    if (!playing) { this.activeAuto = []; this.ws.hitQueue = []; this.ws.matchedInPending.clear(); this.ws.firstChordHitMs = null; }
     return this.snapshot([], [], false, !playing);
   }
 
@@ -84,7 +84,11 @@ export class Transport {
   // INVARIANT: Wait-Mode matches discrete NoteOn hits (edge-triggered), never held keys.
   registerNoteOn(midi: number, timeMs?: number): void {
     if (!this.playing) return;
-    this.ws.hitQueue.push({ midi, timeMs: timeMs ?? this.now() });
+    this.ws.hitQueue.push({ type: 'on', midi, timeMs: timeMs ?? this.now() });
+  }
+  registerNoteOff(midi: number, timeMs?: number): void {
+    if (!this.playing) return;
+    this.ws.hitQueue.push({ type: 'off', midi, timeMs: timeMs ?? this.now() });
   }
 
   step(rawDtMs: number): TransportSnapshot {

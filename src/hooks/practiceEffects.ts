@@ -12,6 +12,7 @@ export interface AudioEffectSink {
 // INVARIANT: Track holds per source so overlapping QWERTY/pointer/MIDI presses never clip on single-source release.
 export class MultiSourceHoldTracker {
   private holds = new Map<number, Set<InputSource>>();
+  private version = 0;
 
   press(midi: number, source: InputSource): boolean {
     let sources = this.holds.get(midi);
@@ -21,6 +22,7 @@ export class MultiSourceHoldTracker {
       this.holds.set(midi, sources);
     }
     sources.add(source);
+    if (wasEmpty) this.version++;
     return wasEmpty;
   }
 
@@ -33,6 +35,7 @@ export class MultiSourceHoldTracker {
     if (!sources || !sources.delete(source)) return false;
     if (sources.size === 0) {
       this.holds.delete(midi);
+      this.version++;
       return true;
     }
     return false;
@@ -46,13 +49,15 @@ export class MultiSourceHoldTracker {
         released.push(midi);
       }
     }
+    if (released.length > 0) this.version++;
     return released;
   }
 
   clearAll(): void {
-    this.holds.clear();
+    if (this.holds.size > 0) { this.holds.clear(); this.version++; }
   }
 
+  getVersion(): number { return this.version; }
   getActiveMidis(): Set<number> {
     return new Set(this.holds.keys());
   }

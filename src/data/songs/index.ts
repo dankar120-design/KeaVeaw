@@ -3,6 +3,12 @@ import { nordicEmbers } from './nordicEmbers';
 import { fMinorArpeggio } from './fMinorArpeggio';
 import { cinematicPulse } from './cinematicPulse';
 import { bluesShuffle } from './bluesShuffle';
+import { classicPassacaglia } from './classicPassacaglia';
+import { classicPassacagliaEasy } from './classicPassacagliaEasy';
+import { classicPassacagliaVar } from './classicPassacagliaVar';
+import { classicBachPreludeC } from './classicBachPreludeC';
+import { classicFurElise } from './classicFurElise';
+import { classicPachelbelCanon } from './classicPachelbelCanon';
 import { lessonFiveFingerWeave } from './lessonFiveFingerWeave';
 import { lessonFingerGymThirds } from './lessonFingerGymThirds';
 import { lessonRhythmWorkshop } from './lessonRhythmWorkshop';
@@ -14,6 +20,12 @@ export {
   fMinorArpeggio,
   cinematicPulse,
   bluesShuffle,
+  classicPassacaglia,
+  classicPassacagliaEasy,
+  classicPassacagliaVar,
+  classicBachPreludeC,
+  classicFurElise,
+  classicPachelbelCanon,
   lessonFiveFingerWeave,
   lessonFingerGymThirds,
   lessonRhythmWorkshop,
@@ -28,6 +40,15 @@ export const CLASSIC_SONGS: Song[] = [
   bluesShuffle,
 ];
 
+export const REPERTOIRE_SONGS: Song[] = [
+  classicPassacaglia,
+  classicPassacagliaEasy,
+  classicPassacagliaVar,
+  classicBachPreludeC,
+  classicFurElise,
+  classicPachelbelCanon,
+];
+
 export const LESSON_SONGS: Song[] = [
   lessonFiveFingerWeave,
   lessonFingerGymThirds,
@@ -36,4 +57,4 @@ export const LESSON_SONGS: Song[] = [
   lessonMinorColours,
 ];
 
-export const SONGS: Song[] = [...CLASSIC_SONGS, ...LESSON_SONGS];
+export const SONGS: Song[] = [...CLASSIC_SONGS, ...REPERTOIRE_SONGS, ...LESSON_SONGS];

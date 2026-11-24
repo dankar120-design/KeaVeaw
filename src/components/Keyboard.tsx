@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { ChordMarker, SongNote } from '../types/midi';
-import { KEY_LAYOUTS, chordPitchClasses, intervalLabel } from '../utils/musicTheory';
+import { KEY_LAYOUTS, chordPitchClasses } from '../utils/musicTheory';
 import {
   clearKeyPointers,
   handleKeyButtonKeyDown,
@@ -9,6 +9,7 @@ import {
   pressKeyPointer,
   releaseKeyPointer,
 } from './keyboardPointer';
+import { getKeyVisuals } from './keyboardVisuals';
 
 export interface KeyboardProps {
   activeNotes: Set<number>;
@@ -19,8 +20,6 @@ export interface KeyboardProps {
   onNoteOff: (midi: number) => void;
   qwertyLabels?: Record<number, string>;
 }
-
-const REFERENCE_NAMES = new Set(['C3', 'C4', 'C5', 'G5']);
 
 export function Keyboard({
   activeNotes,
@@ -78,24 +77,7 @@ export function Keyboard({
     const isSustained = sustainedNotes.has(k.midi);
     const waiting = waitingMap.get(k.midi);
     const inChord = chordPcs.has(k.midi % 12);
-
-    const waitBorder = waiting
-      ? waiting.hand === 'R'
-        ? 'ring-2 ring-inset ring-cyan-400 bg-cyan-500/30'
-        : 'ring-2 ring-inset ring-amber-400 bg-amber-500/30'
-      : '';
-
-    const baseBg = k.isBlack
-      ? isActive ? 'bg-cyan-400 text-slate-950' : inChord ? 'bg-slate-700 text-slate-200 border-slate-600' : 'bg-slate-900 text-slate-300 border-slate-700'
-      : isActive ? 'bg-cyan-300 text-slate-950' : inChord ? 'bg-sky-50 text-slate-900' : 'bg-slate-100 text-slate-800';
-
-    const sustainRing = isSustained && !isActive ? 'ring-2 ring-inset ring-emerald-400/80' : '';
-    const focusClass = k.isBlack ? 'focus-visible:outline-cyan-300' : 'focus-visible:outline-slate-950';
-    const heightClass = k.isBlack ? 'z-10 h-[62%] rounded-b-md border shadow-md' : 'z-0 h-full rounded-b border border-slate-400';
-
-    const interval = waiting && activeChord ? intervalLabel(k.midi, activeChord.rootMidi) : '';
-    const finger = waiting?.finger ? `F${waiting.finger}` : '';
-    const showRef = !k.isBlack && REFERENCE_NAMES.has(k.name);
+    const v = getKeyVisuals(k, { isActive, isSustained, waiting, inChord, activeChord });
     const label = qwertyLabels?.[k.midi];
 
     return (
@@ -107,15 +89,12 @@ export function Keyboard({
         onKeyDown={(e) => handleKeyButtonKeyDown(e, k.midi, pressedEnterMidis.current, onNoteOn)}
         onKeyUp={(e) => handleKeyButtonKeyUp(e, k.midi, pressedEnterMidis.current, onNoteOff)}
         style={{ left: `${k.xNorm * 100}%`, width: `${k.wNorm * 100}%` }}
-        className={`absolute top-0 flex flex-col items-center justify-end pb-1.5 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 ${focusClass} ${heightClass} ${baseBg} ${waitBorder} ${sustainRing}`}
+        className={`absolute top-0 flex flex-col items-center justify-end pb-1.5 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 ${v.focusClass} ${v.heightClass} ${v.baseBg} ${v.waitBorder} ${v.sustainRing}`}
       >
         {k.midi === 60 && <span data-testid="c4-anchor" className="pointer-events-none absolute top-1.5 h-1.5 w-1.5 rounded-full bg-amber-400" />}
-        {(interval || finger) && (
-          <span className="mb-1 rounded bg-slate-950/85 px-1 py-0.5 text-[10px] font-semibold leading-none text-white">
-            {[interval, finger].filter(Boolean).join('·')}
-          </span>
-        )}
-        {showRef && <span className="text-[10px] font-medium leading-none text-slate-500">{k.name}</span>}
+        {v.interval && <span className="mb-0.5 text-[9px] font-semibold leading-none text-slate-600">{v.interval}</span>}
+        {v.waitingPad && <span data-testid="waiting-pad" className={v.waitingPad.className}>{v.waitingPad.label}</span>}
+        {v.showRef && <span className="text-[10px] font-medium leading-none text-slate-500">{k.name}</span>}
         {label && (
           <span data-testid="qwerty-label" className={`pointer-events-none text-[9px] font-semibold leading-none ${k.isBlack ? 'text-slate-400' : 'text-slate-500'}`}>
             {label}

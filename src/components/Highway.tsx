@@ -9,6 +9,7 @@ export interface HighwayProps {
   playing: boolean;
   getPlaybackState: () => HighwayPlaybackState;
   drawRef?: MutableRefObject<(() => void) | null>;
+  playedChord?: string | null;
 }
 
 export function Highway({
@@ -18,6 +19,7 @@ export function Highway({
   playing,
   getPlaybackState,
   drawRef,
+  playedChord = null,
 }: HighwayProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -73,6 +75,15 @@ export function Highway({
   return (
     <div ref={containerRef} className="relative min-h-[120px] w-full flex-1 overflow-hidden bg-[#0B0F19]">
       <canvas ref={canvasRef} className="block h-full w-full" />
+      {playedChord && (
+        <div
+          data-testid="played-chord-badge"
+          className="pointer-events-none absolute left-3 top-3 z-10 flex items-center gap-1.5 rounded-md border border-cyan-500/40 bg-slate-900/85 px-2.5 py-1 text-xs font-semibold text-cyan-200 shadow-sm"
+        >
+          <span className="text-slate-400">Spelar:</span>
+          <span>{playedChord}</span>
+        </div>
+      )}
     </div>
   );
 }

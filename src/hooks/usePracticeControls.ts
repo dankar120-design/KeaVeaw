@@ -1,4 +1,4 @@
-import { MutableRefObject, useCallback } from 'react';
+import { MutableRefObject, useCallback, useRef } from 'react';
 import { SONGS } from '../data/songs';
 import { AudioEngine } from '../engine/AudioEngine';
 import { MidiManager } from '../engine/MidiManager';
@@ -24,6 +24,8 @@ export interface PracticeControlDeps {
 }
 
 export function usePracticeControls(d: PracticeControlDeps) {
+  const lastPlayableHandRef = useRef<HandIsolation>('BOTH');
+
   const togglePlay = useCallback(() => {
     d.unlockAudio();
     const next = !d.playingRef.current;
@@ -38,6 +40,7 @@ export function usePracticeControls(d: PracticeControlDeps) {
 
   const cycleHand = useCallback(() => {
     const next = cycleHandIsolation(d.handRef.current);
+    if (next !== 'DEMO') lastPlayableHandRef.current = next;
     d.handRef.current = next;
     d.setHandIsolation(next);
     const snap = d.transportRef.current.setHandIsolation(next);
@@ -52,6 +55,12 @@ export function usePracticeControls(d: PracticeControlDeps) {
     d.setSong(found);
     d.setBpm(found.bpm);
     d.transportRef.current.setPlaying(false);
+    if (d.handRef.current === 'DEMO') {
+      const restore = lastPlayableHandRef.current === 'DEMO' ? 'BOTH' : lastPlayableHandRef.current;
+      d.handRef.current = restore;
+      d.setHandIsolation(restore);
+      d.transportRef.current.setHandIsolation(restore);
+    }
     d.commitSnapshot(d.transportRef.current.setSong(found), false);
   }, [d]);
 
@@ -62,10 +71,36 @@ export function usePracticeControls(d: PracticeControlDeps) {
   }, [d]);
 
   const changeHandIsolation = useCallback((mode: HandIsolation) => {
+    if (mode !== 'DEMO') lastPlayableHandRef.current = mode;
     d.handRef.current = mode;
     d.setHandIsolation(mode);
     const snap = d.transportRef.current.setHandIsolation(mode);
     d.commitSnapshot(snap, true);
+  }, [d]);
+
+  const toggleDemoPlay = useCallback(() => {
+    if (d.handRef.current !== 'DEMO') {
+      lastPlayableHandRef.current = d.handRef.current;
+      d.unlockAudio();
+      d.handRef.current = 'DEMO';
+      d.setHandIsolation('DEMO');
+      d.commitSnapshot(d.transportRef.current.setHandIsolation('DEMO'), true);
+      if (!d.playingRef.current) {
+        d.playingRef.current = true;
+        d.setPlaying(true);
+        d.commitSnapshot(d.transportRef.current.setPlaying(true), false);
+      }
+      return;
+    }
+    if (d.playingRef.current) {
+      d.playingRef.current = false;
+      d.setPlaying(false);
+      d.commitSnapshot(d.transportRef.current.setPlaying(false), true);
+    }
+    const restore = lastPlayableHandRef.current === 'DEMO' ? 'BOTH' : lastPlayableHandRef.current;
+    d.handRef.current = restore;
+    d.setHandIsolation(restore);
+    d.commitSnapshot(d.transportRef.current.setHandIsolation(restore), true);
   }, [d]);
 
   const changeSustainMode = useCallback((mode: SustainMode) => {
@@ -75,7 +110,7 @@ export function usePracticeControls(d: PracticeControlDeps) {
   }, [d]);
 
   const retryMidi = useCallback(() => {
-    for (const m of d.holdsRef.current.releaseSource('midi')) d.audioRef.current.noteOff(m);
+    for (const m of d.holdsRef.current.releaseSource('midi')) { d.transportRef.current.registerNoteOff?.(m); d.audioRef.current.noteOff(m); }
     d.audioRef.current.setSustainPedal(false);
     d.unlockAudio();
     d.syncVisualNotes();
@@ -83,7 +118,7 @@ export function usePracticeControls(d: PracticeControlDeps) {
   }, [d]);
 
   return {
-    togglePlay, resetLoop, cycleHand, selectSong, changeBpm, changeHandIsolation,
-    changeSustainMode, retryMidi, reconnectMidi: retryMidi,
+    togglePlay, toggleDemoPlay, resetLoop, cycleHand, selectSong, changeBpm,
+    changeHandIsolation, changeSustainMode, retryMidi, reconnectMidi: retryMidi,
   };
 }

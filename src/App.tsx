@@ -14,6 +14,7 @@ export default function App() {
         onSelectSong={e.selectSong}
         playing={e.playing}
         onTogglePlay={e.togglePlay}
+        onToggleDemoPlay={e.toggleDemoPlay}
         onResetLoop={e.resetLoop}
         bpm={e.bpm}
         onChangeBpm={e.changeBpm}
@@ -42,6 +43,7 @@ export default function App() {
         playing={e.playing}
         getPlaybackState={e.getPlaybackState}
         drawRef={e.drawRef}
+        playedChord={e.playedChord}
       />
 
       <Keyboard

@@ -18,8 +18,11 @@ const CHORD_INTERVALS: Record<string, number[]> = {
   m7: [0, 3, 7, 10],
   maj7: [0, 4, 7, 11],
   dim: [0, 3, 6],
+  dim7: [0, 3, 6, 9],
+  m7b5: [0, 3, 6, 10],
   sus2: [0, 2, 7],
   sus4: [0, 5, 7],
+  '7sus4': [0, 5, 7, 10],
 };
 
 export function isBlackKey(midi: number): boolean {
@@ -42,7 +45,8 @@ export function computeOctaveOffset(rawMidi: number): number {
 }
 
 function parseChordParts(symbol: string): { rootPc: number; suffix: string } | null {
-  const match = /^([A-G][#b]?)(.*)$/.exec(symbol.trim());
+  const base = symbol.trim().split('/')[0].trim();
+  const match = /^([A-G][#b]?)(.*)$/.exec(base);
   if (!match) return null;
   const rootPc = PC_MAP[match[1]];
   return rootPc === undefined ? null : { rootPc, suffix: match[2] };

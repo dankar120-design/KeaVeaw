@@ -98,4 +98,15 @@ describe('Hud audio state & MIDI prompt (#6)', () => {
     expect(html).toContain('Tangenter');
     expect(html).toContain('aria-pressed="true"');
   });
+
+  it('renders Klassiker optgroup when classic- songs exist and toggles Lyssna button state', () => {
+    const songs = [...SONGS, { ...SONGS[0], id: 'classic-test', title: 'Klassisk Test' }];
+    const html = renderToStaticMarkup(createElement(Hud, makeProps({ songs, handIsolation: 'BOTH' })));
+    const demoHtml = renderToStaticMarkup(createElement(Hud, makeProps({ songs, handIsolation: 'DEMO' })));
+
+    expect(html).toContain('label="Låtar"');
+    expect(html).toContain('label="Klassiker (C3–G5)"');
+    expect(html).toMatch(/<button[^>]*aria-pressed="false"[^>]*>Lyssna<\/button>/);
+    expect(demoHtml).toMatch(/<button[^>]*aria-pressed="true"[^>]*>Sluta lyssna<\/button>/);
+  });
 });
